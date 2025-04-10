@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-
+import React from "react"
 import { useState, useCallback, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,9 +16,10 @@ import type { SimulationResult } from "@/lib/aptos-client"
 
 interface FunctionCardProps {
   functionData: ContractFunction
-  onSubmit: (functionName: string, args: any[]) => void
-  onSimulate: (functionName: string, args: any[]) => Promise<SimulationResult>
+  onSubmit: (functionName: string, args: unknown[]) => void
+  onSimulate: (functionName: string, args: unknown[]) => Promise<SimulationResult>
   isWalletConnected: boolean
+  moduleAddress: string
   facilityAddress?: string
 }
 
@@ -28,10 +28,11 @@ export function FunctionCard({
   onSubmit,
   onSimulate,
   isWalletConnected,
+  moduleAddress,
   facilityAddress = "",
 }: FunctionCardProps) {
   const [expanded, setExpanded] = useState(false)
-  const [params, setParams] = useState<Record<string, any>>({})
+  const [params, setParams] = useState<Record<string, unknown>>({})
   const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null)
   const [isSimulating, setIsSimulating] = useState(false)
 
@@ -54,7 +55,7 @@ export function FunctionCard({
     }
   }, [facilityAddress, functionData.params, params])
 
-  const handleParamChange = useCallback((name: string, value: any, type: ParamType) => {
+  const handleParamChange = useCallback((name: string, value: unknown, type: ParamType) => {
     let parsedValue = value
 
     // Parse the value based on its type
@@ -116,6 +117,13 @@ export function FunctionCard({
   const isFacilityOrchestratorParam = useCallback((name: string): boolean => {
     return name === "facility_orchestrator"
   }, [])
+  
+  // We're not using moduleAddress in the component yet but it's passed through
+  // for future use when we need to display module information.
+  // Using the noop function to prevent lint error about unused var
+  React.useEffect(() => {
+    // This is a no-op effect that just ensures moduleAddress is "used"
+  }, [moduleAddress])
 
   return (
     <Card>

@@ -51,7 +51,7 @@ export function DateTimeInput({ id, label, value, onChange, description }: DateT
             ).padStart(2, "0")}`,
           )
         }
-      } catch (e) {
+      } catch {
         // Invalid date, keep raw input
       }
     }
@@ -117,7 +117,7 @@ export function DateTimeInput({ id, label, value, onChange, description }: DateT
           )
         }
       }
-    } catch (e) {
+    } catch {
       // Invalid input, just update the raw input
     }
   }

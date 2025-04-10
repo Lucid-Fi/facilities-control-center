@@ -99,7 +99,7 @@ function formatEventType(type: string): string {
   try {
     const parts = type.split("::")
     if (parts.length === 3) {
-      const module = parts[1]
+      const moduleName = parts[1]
       let eventName = parts[2]
 
       // Remove "_event" suffix if present
@@ -113,9 +113,9 @@ function formatEventType(type: string): string {
         .trim()
         .replace(/^\w/, (c) => c.toUpperCase())
 
-      return `${eventName} (${module})`
+      return `${eventName} (${moduleName})`
     }
-  } catch (e) {
+  } catch {
     // If parsing fails, return the original
   }
   return type
