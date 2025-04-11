@@ -1,15 +1,24 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { WalletSelector } from "./wallet-selector";
 import { FunctionCard } from "./function-card";
-import { contractFunctions } from "@/lib/contract-functions";
-import { TransactionStatus } from "./transaction-status";
-import { type SimulationResult, createAptosClient } from "@/lib/aptos-client";
+import {
+  contractFunctions,
+  type TransactionStatus,
+} from "@/lib/contract-functions";
+import { TransactionStatus as TransactionStatusComponent } from "./transaction-status";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/lib/use-wallet";
+import { useMutation } from "@tanstack/react-query";
+import {
+  EntryFunctionArgumentTypes,
+  MoveFunctionId,
+  Network,
+} from "@aptos-labs/ts-sdk";
+import { SimulationResult, simulateTransaction } from "@/lib/aptos-service";
 
 export default function ContractInterface() {
   const searchParams = useSearchParams();
@@ -21,14 +30,19 @@ export default function ContractInterface() {
   const [inputModuleAddress, setInputModuleAddress] = useState<string>("0x1");
   const [facilityAddress, setFacilityAddress] = useState<string>("");
   const [inputFacilityAddress, setInputFacilityAddress] = useState<string>("");
-  const [transactionStatus, setTransactionStatus] = useState<{
-    status: "idle" | "pending" | "success" | "error";
-    message: string;
-    txHash?: string;
-  }>({
-    status: "idle",
-    message: "",
-  });
+  const [transactionStatus, setTransactionStatus] = useState<TransactionStatus>(
+    {
+      status: "idle",
+      message: "",
+    }
+  );
+
+  // Map wallet network string to SDK Network enum
+  const aptosNetwork = useCallback(() => {
+    if (network && network.chainId === 1) return Network.MAINNET;
+    if (network && network.chainId === 2) return Network.TESTNET;
+    return Network.DEVNET;
+  }, [network]);
 
   // Initialize addresses from URL query params
   useEffect(() => {
@@ -45,100 +59,91 @@ export default function ContractInterface() {
     }
   }, [searchParams]);
 
-  // Create an Aptos client instance based on the current network
-  const aptosClient = useMemo(() => {
-    // Get network URL based on connected wallet's network
-    const networkUrl =
-      network === "Mainnet"
-        ? "https://fullnode.mainnet.aptoslabs.com/v1"
-        : wallet?.network === "Testnet"
-        ? "https://fullnode.testnet.aptoslabs.com/v1"
-        : "https://fullnode.devnet.aptoslabs.com/v1"; // Default to devnet
-
-    const client = createAptosClient({
-      nodeUrl: networkUrl,
-    });
-
-    // Set the wallet submit function if we have one
-    if (submitTransaction) {
-      client.setWalletSubmit(submitTransaction);
-    }
-
-    return client;
-  }, [submitTransaction, wallet?.network]);
-
+  // Transaction submission handler
   const handleTransactionSubmit = useCallback(
     async (functionName: string, args: unknown[]) => {
-      if (!walletAccount || !connected) {
-        setTransactionStatus({
-          status: "error",
-          message: "Please connect your wallet first",
-        });
-        return;
+      if (!account || !connected) {
+        throw new Error("Please connect your wallet first");
       }
 
-      try {
-        setTransactionStatus({
-          status: "pending",
-          message: `Submitting transaction for ${functionName}...`,
-        });
+      const payload = {
+        function: `${moduleAddress}::${functionName}`,
+        type_arguments: [],
+        arguments: args,
+        type: "entry_function_payload",
+      };
 
-        // Create the transaction payload using the configured module address
-        const payload = {
-          ...aptosClient.createEntryFunctionPayload(
-            `${moduleAddress}::test_harness`,
-            functionName,
-            [],
-            args
-          ),
-          type: "entry_function_payload",
-        };
+      const result = await submitTransaction({
+        function: payload.function as MoveFunctionId,
+        typeArguments: payload.type_arguments,
+        functionArguments: payload.arguments as EntryFunctionArgumentTypes[],
+      });
 
-        // Submit the transaction
-        const result = await aptosClient.submitTransaction(
-          walletAccount,
-          payload
-        );
+      console.log("Transaction result:", result);
 
-        // Set success status with tx hash
-        setTransactionStatus({
-          status: "success",
-          message: `Transaction for ${functionName} submitted successfully!`,
-          txHash: result.hash,
-        });
-
-        // Wait for the transaction to complete
-        try {
-          await aptosClient.waitForTransaction(result.hash);
-          // Update status to show transaction is completed
-          setTransactionStatus({
-            status: "success",
-            message: `Transaction for ${functionName} completed successfully!`,
-            txHash: result.hash,
-          });
-        } catch (error) {
-          console.error("Error waiting for transaction:", error);
-        }
-
-        // Reset status after 5 seconds
-        setTimeout(() => {
-          setTransactionStatus({
-            status: "idle",
-            message: "",
-          });
-        }, 5000);
-      } catch (error) {
-        setTransactionStatus({
-          status: "error",
-          message: `Transaction failed: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-        });
-      }
+      return result;
     },
-    [walletAccount, connected, aptosClient, moduleAddress]
+    [account, connected, moduleAddress, submitTransaction]
   );
 
+  // Transaction mutation
+  const { mutate: submitTx } = useMutation({
+    mutationFn: async ({
+      functionName,
+      args,
+    }: {
+      functionName: string;
+      args: unknown[];
+    }) => {
+      setTransactionStatus({
+        status: "pending",
+        message: `Submitting transaction for ${functionName}...`,
+      });
+
+      return await handleTransactionSubmit(functionName, args);
+    },
+    onSuccess: (data) => {
+      setTransactionStatus({
+        status: "success",
+        message: "Transaction completed successfully!",
+        txHash: data.hash,
+      });
+
+      // Reset status after 5 seconds
+      setTimeout(() => {
+        setTransactionStatus({
+          status: "idle",
+          message: "",
+        });
+      }, 5000);
+    },
+    onError: (error) => {
+      setTransactionStatus({
+        status: "error",
+        message: `Transaction failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      });
+    },
+  });
+
+  // Wrapper function for FunctionCard to use
+  const onSubmit = useCallback(
+    async (functionName: string, args: unknown[]) => {
+      return new Promise<{ hash: string }>((resolve, reject) => {
+        submitTx(
+          { functionName, args },
+          {
+            onSuccess: (data) => resolve(data),
+            onError: (error) => reject(error),
+          }
+        );
+      });
+    },
+    [submitTx]
+  );
+
+  // Transaction simulation handler using the official SDK
   const handleTransactionSimulate = useCallback(
     async (
       functionName: string,
@@ -148,19 +153,16 @@ export default function ContractInterface() {
         throw new Error("Wallet not connected");
       }
 
-      // Create the transaction payload using the configured module address
-      const payload = {
-        function: `${moduleAddress}::test_harness::${functionName}`,
-        type_arguments: [],
-        arguments: args,
-        type: "entry_function_payload",
-      };
-
-      // Simulate the transaction - Make sure we pass a string address
-      // This prevents the "accountOrPubkey.toBytes is not a function" error
-      return await aptosClient.simulateTransaction(account, payload);
+      // Use our simulateTransaction utility
+      return await simulateTransaction(
+        account,
+        functionName,
+        moduleAddress,
+        args,
+        aptosNetwork()
+      );
     },
-    [walletAccount, aptosClient, moduleAddress]
+    [account, moduleAddress, aptosNetwork]
   );
 
   const updateFacilityAddress = () => {
@@ -169,7 +171,7 @@ export default function ContractInterface() {
 
       // Update URL with the new facility address
       const params = new URLSearchParams(window.location.search);
-      params.set("facility_address", inputFacilityAddress);
+      params.set("facility", inputFacilityAddress);
       const newUrl = `${window.location.pathname}?${params.toString()}`;
       window.history.pushState({}, "", newUrl);
     }
@@ -181,7 +183,7 @@ export default function ContractInterface() {
 
       // Update URL with the new module address
       const params = new URLSearchParams(window.location.search);
-      params.set("module_address", inputModuleAddress);
+      params.set("module", inputModuleAddress);
       const newUrl = `${window.location.pathname}?${params.toString()}`;
       window.history.pushState({}, "", newUrl);
     }
@@ -209,7 +211,7 @@ export default function ContractInterface() {
             <strong>Address:</strong> {account.address.toString()}
           </p>
           <p className="text-sm mb-1">
-            <strong>Network:</strong> {wallet?.name || "Unknown"}
+            <strong>Network:</strong> {network ? network.name : "Unknown"}
           </p>
           <p className="text-sm">
             <strong>Wallet:</strong> {wallet?.name || "Unknown"}
@@ -264,11 +266,11 @@ export default function ContractInterface() {
       </div>
 
       {transactionStatus.status !== "idle" && (
-        <TransactionStatus
+        <TransactionStatusComponent
           status={transactionStatus.status}
           message={transactionStatus.message}
           txHash={transactionStatus.txHash}
-          network={wallet?.network}
+          network={network ? network.toString() : undefined}
         />
       )}
 
@@ -277,11 +279,12 @@ export default function ContractInterface() {
           <FunctionCard
             key={func.name}
             functionData={func}
-            onSubmit={handleTransactionSubmit}
+            onSubmit={onSubmit}
             onSimulate={handleTransactionSimulate}
             isWalletConnected={!!walletAccount}
             moduleAddress={moduleAddress}
             facilityAddress={facilityAddress}
+            walletAccount={account}
           />
         ))}
       </div>

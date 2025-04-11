@@ -1,21 +1,29 @@
-export type ParamType = "u64" | "u128" | "address" | "boolean" | "vector<u8>" | "String"
+export type ParamType =
+  | "u64"
+  | "u128"
+  | "address"
+  | "boolean"
+  | "vector<u8>"
+  | "String";
 
 export interface FunctionParam {
-  name: string
-  type: ParamType
-  description?: string
+  name: string;
+  type: ParamType;
+  description?: string;
 }
 
 export interface ContractFunction {
-  name: string
-  description: string
-  params: FunctionParam[]
-  isEntry: boolean
+  title: string;
+  name: string;
+  description: string;
+  params: FunctionParam[];
+  isEntry: boolean;
 }
 
 export const contractFunctions: ContractFunction[] = [
   {
-    name: "setup_test_facility",
+    title: "Setup Test Facility",
+    name: "roda_test_harness::setup_test_facility",
     description: "Set up a test facility with default parameters",
     isEntry: true,
     params: [
@@ -32,7 +40,8 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
-    name: "setup_test_facility_with_seed",
+    title: "Setup Test Facility with Seed",
+    name: "roda_test_harness::setup_test_facility_with_seed",
     description: "Set up a test facility with a custom seed prefix",
     isEntry: true,
     params: [
@@ -54,7 +63,8 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
-    name: "update_attested_borrowing_base_value",
+    title: "Update Attested Borrowing Base Value",
+    name: "roda_test_harness::update_attested_borrowing_base_value",
     description: "Update the attested borrowing base value",
     isEntry: true,
     params: [
@@ -71,7 +81,8 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
-    name: "execute_interest_waterfall",
+    title: "Execute Interest Waterfall",
+    name: "roda_test_harness::execute_interest_waterfall",
     description: "Execute the interest waterfall process for a time period",
     isEntry: true,
     params: [
@@ -93,7 +104,8 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
-    name: "simulate_loan_payment",
+    title: "Simulate Loan Payment",
+    name: "roda_test_harness::simulate_loan_payment",
     description: "Simulate a loan payment with principal and interest",
     isEntry: true,
     params: [
@@ -115,7 +127,8 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
-    name: "contribute_principal",
+    title: "Contribute Principal",
+    name: "roda_test_harness::contribute_principal",
     description: "Contribute principal to a share",
     isEntry: true,
     params: [
@@ -137,7 +150,8 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
-    name: "request_capital_call",
+    title: "Request Capital Call",
+    name: "roda_test_harness::request_capital_call",
     description: "Request a capital call as the originator",
     isEntry: true,
     params: [
@@ -154,7 +168,8 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
-    name: "run_principal_waterfall",
+    title: "Run Principal Waterfall",
+    name: "roda_test_harness::run_principal_waterfall",
     description: "Run the principal waterfall process",
     isEntry: true,
     params: [
@@ -180,4 +195,11 @@ export const contractFunctions: ContractFunction[] = [
       },
     ],
   },
-]
+];
+
+// Utility for tracking transaction status
+export interface TransactionStatus {
+  status: "idle" | "pending" | "success" | "error";
+  message: string;
+  txHash?: string;
+}

@@ -13,18 +13,17 @@ interface TransactionStatusProps {
 }
 
 export function TransactionStatus({ status, message, txHash, network }: TransactionStatusProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { wallet } = useWallet()
   const [copied, setCopied] = useState(false)
   const [currentNetwork, setCurrentNetwork] = useState<string>(network || 'Devnet')
 
   useEffect(() => {
-    // Update network from wallet if available
-    if (wallet?.network) {
-      setCurrentNetwork(wallet.network)
-    } else if (network) {
+    // Update network from context if available
+    if (network) {
       setCurrentNetwork(network)
     }
-  }, [wallet, network])
+  }, [network])
 
   useEffect(() => {
     if (copied) {

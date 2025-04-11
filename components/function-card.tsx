@@ -1,26 +1,56 @@
-"use client"
+"use client";
 
-import React from "react"
-import { useState, useCallback, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import type { ContractFunction, ParamType } from "@/lib/contract-functions"
-import { ChevronDown, ChevronUp, Info, PlayCircle } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DateTimeInput } from "./date-time-input"
-import { SimulationResults } from "./simulation-results"
-import type { SimulationResult } from "@/lib/aptos-client"
+import React from "react";
+import { useState, useCallback, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import type { ContractFunction, ParamType } from "@/lib/contract-functions";
+import {
+  ChevronDown,
+  ChevronUp,
+  Info,
+  PlayCircle,
+  ExternalLink,
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { DateTimeInput } from "./date-time-input";
+import { SimulationResults } from "./simulation-results";
+import type { SimulationResult } from "@/lib/aptos-service";
+import {
+  useSimulateContractFunction,
+  useSubmitContractFunction,
+} from "@/lib/use-contract-queries";
+import { AccountInfo, useWallet } from "@aptos-labs/wallet-adapter-react";
 
 interface FunctionCardProps {
-  functionData: ContractFunction
-  onSubmit: (functionName: string, args: unknown[]) => void
-  onSimulate: (functionName: string, args: unknown[]) => Promise<SimulationResult>
-  isWalletConnected: boolean
-  moduleAddress: string
-  facilityAddress?: string
+  functionData: ContractFunction;
+  onSubmit: (
+    functionName: string,
+    args: unknown[]
+  ) => Promise<{ hash: string }>;
+  onSimulate: (
+    functionName: string,
+    args: unknown[]
+  ) => Promise<SimulationResult>;
+  isWalletConnected: boolean;
+  moduleAddress: string;
+  facilityAddress?: string;
+  walletAccount: AccountInfo | null | undefined;
 }
 
 export function FunctionCard({
@@ -30,111 +60,144 @@ export function FunctionCard({
   isWalletConnected,
   moduleAddress,
   facilityAddress = "",
+  walletAccount,
 }: FunctionCardProps) {
-  const [expanded, setExpanded] = useState(false)
-  const [params, setParams] = useState<Record<string, unknown>>({})
-  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null)
-  const [isSimulating, setIsSimulating] = useState(false)
+  const { network } = useWallet();
+  const [expanded, setExpanded] = useState(false);
+  const [params, setParams] = useState<Record<string, unknown>>({});
 
   // Set default values for facility_orchestrator parameters when facilityAddress changes
   useEffect(() => {
     if (facilityAddress) {
-      const updatedParams = { ...params }
-      let hasUpdates = false
+      const updatedParams = { ...params };
+      let hasUpdates = false;
 
       functionData.params.forEach((param) => {
         if (param.name === "facility_orchestrator" && !params[param.name]) {
-          updatedParams[param.name] = facilityAddress
-          hasUpdates = true
+          updatedParams[param.name] = facilityAddress;
+          hasUpdates = true;
         }
-      })
+      });
 
       if (hasUpdates) {
-        setParams(updatedParams)
+        setParams(updatedParams);
       }
     }
-  }, [facilityAddress, functionData.params, params])
+  }, [facilityAddress, functionData.params, params]);
 
-  const handleParamChange = useCallback((name: string, value: unknown, type: ParamType) => {
-    let parsedValue = value
+  const handleParamChange = useCallback(
+    (name: string, value: unknown, type: ParamType) => {
+      let parsedValue = value;
 
-    // Parse the value based on its type
-    if (type === "u64" || type === "u128") {
-      parsedValue = value === "" ? "" : Number(value)
-    } else if (type === "boolean") {
-      parsedValue = Boolean(value)
-    } else if (type === "address") {
-      // Keep as string
-      parsedValue = value
-    } else if (type === "vector<u8>") {
-      // For simplicity, we'll treat vector<u8> as a string
-      parsedValue = value
-    }
+      // Parse the value based on its type
+      if (type === "u64" || type === "u128") {
+        parsedValue = value === "" ? "" : Number(value);
+      } else if (type === "boolean") {
+        parsedValue = Boolean(value);
+      } else if (type === "address") {
+        // Keep as string
+        parsedValue = value;
+      } else if (type === "vector<u8>") {
+        // For simplicity, we'll treat vector<u8> as a string
+        parsedValue = value;
+      }
 
-    setParams((prevParams) => ({ ...prevParams, [name]: parsedValue }))
-  }, [])
+      setParams((prevParams) => ({ ...prevParams, [name]: parsedValue }));
+    },
+    []
+  );
+
+  // Create arguments array for query
+  const getArgs = useCallback(() => {
+    return functionData.params.map((param) => params[param.name] ?? "");
+  }, [functionData.params, params]);
+
+  // Use TanStack Query for contract simulation
+  const {
+    data: simulationResult,
+    isLoading: isSimulating,
+    refetch: runSimulation,
+    isError: isSimulationError,
+  } = useSimulateContractFunction({
+    moduleAddress,
+    functionName: functionData.name,
+    args: getArgs(),
+    account: walletAccount,
+    enabled: false, // Don't run automatically, only when triggered
+    onSimulate,
+  });
+
+  // Use TanStack Query for contract submission
+  const {
+    mutate: submitTransaction,
+    isPending: isSubmitting,
+    isSuccess,
+    data,
+  } = useSubmitContractFunction({
+    moduleAddress,
+    functionName: functionData.name,
+    args: getArgs(),
+    account: walletAccount,
+    submitFunction: onSubmit,
+  });
 
   const handleSubmit = useCallback(
     (e?: React.FormEvent) => {
-      if (e) e.preventDefault()
-
-      // Convert params object to array in the order of functionData.params
-      const args = functionData.params.map((param) => params[param.name] ?? "")
-
-      onSubmit(functionData.name, args)
+      if (e) e.preventDefault();
+      submitTransaction();
     },
-    [functionData.name, functionData.params, onSubmit, params],
-  )
+    [submitTransaction]
+  );
 
-  const handleSimulate = useCallback(async () => {
-    if (!isWalletConnected) return
-
-    setIsSimulating(true)
-    setSimulationResult(null)
-
-    try {
-      // Convert params object to array in the order of functionData.params
-      const args = functionData.params.map((param) => params[param.name] ?? "")
-
-      const result = await onSimulate(functionData.name, args)
-      setSimulationResult(result)
-    } catch (error) {
-      console.error("Simulation error:", error)
-    } finally {
-      setIsSimulating(false)
-    }
-  }, [functionData.name, functionData.params, isWalletConnected, onSimulate, params])
+  const handleSimulate = useCallback(() => {
+    if (!isWalletConnected) return;
+    runSimulation();
+  }, [isWalletConnected, runSimulation]);
 
   // Check if this is a time-related parameter
-  const isTimeParam = useCallback(
-    (name: string): boolean => {
-      return name.toLowerCase().includes("time") && functionData.name === "execute_interest_waterfall"
-    },
-    [functionData.name],
-  )
+  const isTimeParam = useCallback((name: string): boolean => {
+    return name.toLowerCase().includes("time");
+  }, []);
 
   // Check if this is a facility orchestrator parameter
   const isFacilityOrchestratorParam = useCallback((name: string): boolean => {
-    return name === "facility_orchestrator"
-  }, [])
-  
+    return name === "facility_orchestrator";
+  }, []);
+
+  // Construct explorer link
+  const explorerLink =
+    data?.hash && network?.name
+      ? `https://explorer.aptoslabs.com/txn/${
+          data.hash
+        }?network=${network.name.toLowerCase()}`
+      : null;
+
   // We're not using moduleAddress in the component yet but it's passed through
   // for future use when we need to display module information.
   // Using the noop function to prevent lint error about unused var
   React.useEffect(() => {
     // This is a no-op effect that just ensures moduleAddress is "used"
-  }, [moduleAddress])
+  }, [moduleAddress]);
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">{functionData.name}</CardTitle>
+            <CardTitle className="text-lg">{functionData.title}</CardTitle>
             <CardDescription>{functionData.description}</CardDescription>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)} className="h-8 w-8 p-0">
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setExpanded(!expanded)}
+            className="h-8 w-8 p-0"
+          >
+            {expanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </CardHeader>
@@ -149,12 +212,17 @@ export function FunctionCard({
                     id={`${functionData.name}-${param.name}`}
                     label={param.name}
                     value={params[param.name] ?? ""}
-                    onChange={(value) => handleParamChange(param.name, value, param.type)}
+                    onChange={(value) =>
+                      handleParamChange(param.name, value, param.type)
+                    }
                     description={param.description}
                   />
                 ) : param.type === "boolean" ? (
                   <div className="space-y-2">
-                    <Label htmlFor={`${functionData.name}-${param.name}`} className="text-sm flex items-center gap-2">
+                    <Label
+                      htmlFor={`${functionData.name}-${param.name}`}
+                      className="text-sm flex items-center gap-2"
+                    >
                       {param.name}
                       <TooltipProvider>
                         <Tooltip>
@@ -172,7 +240,9 @@ export function FunctionCard({
                       <Checkbox
                         id={`${functionData.name}-${param.name}`}
                         checked={!!params[param.name]}
-                        onCheckedChange={(checked) => handleParamChange(param.name, checked, param.type)}
+                        onCheckedChange={(checked) =>
+                          handleParamChange(param.name, checked, param.type)
+                        }
                       />
                       <label
                         htmlFor={`${functionData.name}-${param.name}`}
@@ -185,7 +255,10 @@ export function FunctionCard({
                 ) : (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <Label htmlFor={`${functionData.name}-${param.name}`} className="text-sm">
+                      <Label
+                        htmlFor={`${functionData.name}-${param.name}`}
+                        className="text-sm"
+                      >
                         {param.name}
                       </Label>
                       <TooltipProvider>
@@ -203,48 +276,85 @@ export function FunctionCard({
                     <Input
                       id={`${functionData.name}-${param.name}`}
                       placeholder={
-                        isFacilityOrchestratorParam(param.name) && facilityAddress
+                        isFacilityOrchestratorParam(param.name) &&
+                        facilityAddress
                           ? facilityAddress
                           : `Enter ${param.name}`
                       }
-                      value={params[param.name] ?? ""}
-                      onChange={(e) => handleParamChange(param.name, e.target.value, param.type)}
+                      value={(params[param.name] as string) ?? ""}
+                      onChange={(e) =>
+                        handleParamChange(
+                          param.name,
+                          e.target.value,
+                          param.type
+                        )
+                      }
                       className={
-                        isFacilityOrchestratorParam(param.name) && facilityAddress
+                        isFacilityOrchestratorParam(param.name) &&
+                        facilityAddress
                           ? "w-full border-green-300 focus:ring-green-500"
                           : "w-full"
                       }
                     />
-                    {isFacilityOrchestratorParam(param.name) && facilityAddress && !params[param.name] && (
-                      <p className="text-xs text-green-600">Using default facility address</p>
-                    )}
+                    {isFacilityOrchestratorParam(param.name) &&
+                      facilityAddress &&
+                      !params[param.name] && (
+                        <p className="text-xs text-green-600">
+                          Using default facility address
+                        </p>
+                      )}
                   </div>
                 )}
               </div>
             ))}
           </form>
 
-          <SimulationResults result={simulationResult} isLoading={isSimulating} />
+          <SimulationResults
+            result={simulationResult as SimulationResult | null}
+            isLoading={isSimulating}
+            error={isSimulationError ? new Error("Simulation failed") : null}
+          />
         </CardContent>
       )}
 
       <CardFooter className={expanded ? "pt-2" : "pt-0"}>
-        <div className="flex w-full gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleSimulate}
-            disabled={!isWalletConnected || isSimulating}
-            className="flex-1"
-          >
-            <PlayCircle className="h-4 w-4 mr-2" />
-            {isSimulating ? "Simulating..." : "Simulate"}
-          </Button>
-          <Button type="button" onClick={() => handleSubmit()} disabled={!isWalletConnected} className="flex-1">
-            Execute
-          </Button>
+        <div className="flex flex-col w-full gap-2">
+          <div className="flex w-full gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSimulate}
+              disabled={!isWalletConnected || isSimulating}
+              className="flex-1"
+            >
+              <PlayCircle className="h-4 w-4 mr-2" />
+              {isSimulating ? "Simulating..." : "Simulate"}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => handleSubmit()}
+              disabled={!isWalletConnected || isSubmitting}
+              className="flex-1"
+            >
+              {isSubmitting ? "Executing..." : "Execute"}
+            </Button>
+          </div>
+          {isSuccess && explorerLink && (
+            <div className="mt-2 text-sm text-green-600 flex items-center justify-center">
+              <span>Success! View on Explorer:</span>
+              <a
+                href={explorerLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-1 underline inline-flex items-center gap-1"
+              >
+                {" "}
+                Txn <ExternalLink className="h-3 w-3" />{" "}
+              </a>
+            </div>
+          )}
         </div>
       </CardFooter>
     </Card>
-  )
+  );
 }
