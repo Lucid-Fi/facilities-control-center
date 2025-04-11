@@ -14,6 +14,7 @@ export interface FunctionParam {
 
 export interface ContractFunction {
   title: string;
+  actor?: string;
   moduleName: string;
   functionName: string;
   description: string;
@@ -25,6 +26,7 @@ export interface ContractFunction {
 export const contractFunctions: ContractFunction[] = [
   {
     title: "Setup Test Facility",
+    actor: "tester",
     moduleName: "roda_test_harness",
     functionName: "setup_test_facility",
     description: "Set up a test facility with default parameters",
@@ -45,6 +47,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Setup Test Facility with Seed",
+    actor: "tester",
     moduleName: "roda_test_harness",
     functionName: "setup_test_facility_with_seed",
     description: "Set up a test facility with a custom seed prefix",
@@ -70,6 +73,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Update Attested Borrowing Base Value",
+    actor: "fund-manager",
     moduleName: "roda_test_harness",
     functionName: "update_attested_borrowing_base_value",
     description: "Update the attested borrowing base value",
@@ -90,6 +94,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Execute Interest Waterfall",
+    actor: "fund-manager",
     moduleName: "roda_test_harness",
     functionName: "execute_interest_waterfall",
     description: "Execute the interest waterfall process for a time period",
@@ -115,6 +120,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Simulate Loan Payment",
+    actor: "tester",
     moduleName: "roda_test_harness",
     functionName: "simulate_loan_payment",
     description: "Simulate a loan payment with principal and interest",
@@ -140,6 +146,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Contribute Principal",
+    actor: "tester",
     moduleName: "roda_test_harness",
     functionName: "contribute_principal",
     description: "Contribute principal to a share",
@@ -165,6 +172,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Request Capital Call",
+    actor: "originator",
     moduleName: "roda_test_harness",
     functionName: "request_capital_call",
     description: "Request a capital call as the originator",
@@ -185,6 +193,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Run Principal Waterfall",
+    actor: "fund-manager",
     moduleName: "roda_test_harness",
     functionName: "run_principal_waterfall",
     description: "Run the principal waterfall process",
@@ -215,6 +224,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Exchange Tokens",
+    actor: "originator",
     moduleName: "roda_test_harness",
     functionName: "exchange_tokens",
     description:
@@ -246,6 +256,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Mint Test Token",
+    actor: "tester",
     moduleName: "roda_test_harness",
     functionName: "mint_test_token_to",
     description: "Mint test tokens and deposit them to a specified address",
@@ -270,7 +281,8 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
-    title: "Exchange",
+    title: "Exchange ZVT for USDT",
+    actor: "originator",
     moduleName: "token_exchanger",
     functionName: "exchange",
     description: "Exchange tokens using the single token exchanger",
@@ -301,6 +313,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Attest NAV",
+    actor: "fund-manager",
     moduleName: "share_exchange",
     functionName: "attest_nav",
     description: "Attest to the Net Asset Value (NAV) for a specific share",
@@ -326,6 +339,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Force Approve Escrow",
+    actor: "fund-manager",
     moduleName: "share_exchange",
     functionName: "force_approve_escrow",
     description: "Force approve an escrowed commitment",
@@ -341,6 +355,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Period",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_period",
     description: "Set the period for a RODA waterfall",
@@ -366,6 +381,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Min Utilization Timestamp",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_min_utilization_timestamp",
     description: "Set the minimum utilization timestamp for a RODA waterfall",
@@ -386,6 +402,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Min Utilization",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_min_utilization",
     description: "Set the minimum utilization for a RODA waterfall",
@@ -406,6 +423,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Default Penalty Interest",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_default_penalty_interest",
     description: "Set the default penalty interest for a RODA waterfall",
@@ -426,6 +444,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Min Interest Deficit",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_min_interest_deficit",
     description: "Set the minimum interest deficit for a RODA waterfall",
@@ -446,9 +465,11 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Min Util Interest Deficit",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_min_util_interest_deficit",
-    description: "Set the minimum utilization interest deficit for a RODA waterfall",
+    description:
+      "Set the minimum utilization interest deficit for a RODA waterfall",
     isEntry: true,
     tags: ["waterfall", "utilization", "interest", "deficit", "configuration"],
     params: [
@@ -466,6 +487,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Default Penalty Deficit",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_default_penalty_deficit",
     description: "Set the default penalty deficit for a RODA waterfall",
@@ -486,6 +508,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Is In Default",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_is_in_default",
     description: "Set the default status for a RODA waterfall",
@@ -506,6 +529,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Is Early Close",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_is_early_close",
     description: "Set the early close status for a RODA waterfall",
@@ -526,6 +550,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Set Early Close Penalty",
+    actor: "fund-manager",
     moduleName: "roda_waterfall",
     functionName: "set_early_close_penalty",
     description: "Set the early close penalty for a RODA waterfall",
@@ -546,6 +571,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Create Capital Call Request",
+    actor: "originator",
     moduleName: "facility_core",
     functionName: "create_capital_call_request",
     description: "Create a capital call request for a facility",
@@ -566,6 +592,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Create Recycle Request",
+    actor: "originator",
     moduleName: "facility_core",
     functionName: "create_recycle_request",
     description: "Create a recycle request for a facility",
@@ -586,6 +613,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Respond To Capital Call Request",
+    actor: "fund-manager",
     moduleName: "facility_core",
     functionName: "respond_to_capital_call_request",
     description: "Respond to a capital call request for a facility",
@@ -606,6 +634,7 @@ export const contractFunctions: ContractFunction[] = [
   },
   {
     title: "Respond To Recycle Request",
+    actor: "fund-manager",
     moduleName: "facility_core",
     functionName: "respond_to_recycle_request",
     description: "Respond to a recycle request for a facility",

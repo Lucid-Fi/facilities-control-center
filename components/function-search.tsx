@@ -17,6 +17,7 @@ export function FunctionSearch({
   const [selectedModules, setSelectedModules] = useState<Set<string>>(
     new Set()
   );
+  const [selectedActors, setSelectedActors] = useState<Set<string>>(new Set());
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -30,6 +31,16 @@ export function FunctionSearch({
     const moduleSet = new Set<string>();
     functions.forEach((func) => moduleSet.add(func.moduleName));
     return Array.from(moduleSet).sort();
+  }, [functions]);
+
+  const allActors = useMemo(() => {
+    const actorSet = new Set<string>();
+    functions.forEach((func) => {
+      if (func.actor) {
+        actorSet.add(func.actor);
+      }
+    });
+    return Array.from(actorSet).sort();
   }, [functions]);
 
   const filteredFunctions = useMemo(() => {
@@ -51,9 +62,13 @@ export function FunctionSearch({
       const matchesModules =
         selectedModules.size === 0 || selectedModules.has(func.moduleName);
 
-      return matchesSearch && matchesTags && matchesModules;
+      const matchesActors =
+        selectedActors.size === 0 ||
+        (func.actor && selectedActors.has(func.actor));
+
+      return matchesSearch && matchesTags && matchesModules && matchesActors;
     });
-  }, [functions, searchQuery, selectedTags, selectedModules]);
+  }, [functions, searchQuery, selectedTags, selectedModules, selectedActors]);
 
   const toggleTag = (tag: string) => {
     const newTags = new Set(selectedTags);
@@ -75,6 +90,16 @@ export function FunctionSearch({
     setSelectedModules(newModules);
   };
 
+  const toggleActor = (actor: string) => {
+    const newActors = new Set(selectedActors);
+    if (newActors.has(actor)) {
+      newActors.delete(actor);
+    } else {
+      newActors.add(actor);
+    }
+    setSelectedActors(newActors);
+  };
+
   useEffect(() => {
     onFilteredFunctionsChange(filteredFunctions);
   }, [filteredFunctions, onFilteredFunctionsChange]);
@@ -88,6 +113,24 @@ export function FunctionSearch({
         className="w-full"
       />
       <div className="flex flex-wrap gap-2">
+        <span className="text-sm font-medium text-muted-foreground mr-2 self-center">
+          Actors:
+        </span>
+        {allActors.map((actor) => (
+          <Badge
+            key={`actor-${actor}`}
+            variant={selectedActors.has(actor) ? "destructive" : "outline"}
+            className="cursor-pointer hover:bg-destructive/80 text-md px-3 py-1 rounded-md"
+            onClick={() => toggleActor(actor)}
+          >
+            {actor}
+          </Badge>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <span className="text-sm font-medium text-muted-foreground mr-2 self-center">
+          Modules:
+        </span>
         {allModules.map((module) => (
           <Badge
             key={`module-${module}`}
@@ -100,6 +143,9 @@ export function FunctionSearch({
         ))}
       </div>
       <div className="flex flex-wrap gap-2">
+        <span className="text-sm font-medium text-muted-foreground mr-2 self-center">
+          Tags:
+        </span>
         {allTags.map((tag) => (
           <Badge
             key={tag}

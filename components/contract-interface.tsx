@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { WalletSelector } from "./wallet-selector";
 import { FunctionCard } from "./function-card";
 import { FunctionSearch } from "./function-search";
+import { FacilityOverview } from "./facility-overview";
 import {
   contractFunctions,
   type TransactionStatus,
@@ -275,6 +276,13 @@ export default function ContractInterface() {
           message={transactionStatus.message}
           txHash={transactionStatus.txHash}
           network={network ? network.toString() : undefined}
+        />
+      )}
+
+      {facilityAddress && (
+        <FacilityOverview 
+          facilityAddress={facilityAddress} 
+          moduleAddress={moduleAddress} 
         />
       )}
 
