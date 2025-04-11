@@ -14,6 +14,9 @@ export function FunctionSearch({
 }: FunctionSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [selectedModules, setSelectedModules] = useState<Set<string>>(
+    new Set()
+  );
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -21,6 +24,12 @@ export function FunctionSearch({
       func.tags.forEach((tag) => tagSet.add(tag));
     });
     return Array.from(tagSet).sort();
+  }, [functions]);
+
+  const allModules = useMemo(() => {
+    const moduleSet = new Set<string>();
+    functions.forEach((func) => moduleSet.add(func.moduleName));
+    return Array.from(moduleSet).sort();
   }, [functions]);
 
   const filteredFunctions = useMemo(() => {
@@ -39,9 +48,12 @@ export function FunctionSearch({
         selectedTags.size === 0 ||
         func.tags.some((tag) => selectedTags.has(tag));
 
-      return matchesSearch && matchesTags;
+      const matchesModules =
+        selectedModules.size === 0 || selectedModules.has(func.moduleName);
+
+      return matchesSearch && matchesTags && matchesModules;
     });
-  }, [functions, searchQuery, selectedTags]);
+  }, [functions, searchQuery, selectedTags, selectedModules]);
 
   const toggleTag = (tag: string) => {
     const newTags = new Set(selectedTags);
@@ -51,6 +63,16 @@ export function FunctionSearch({
       newTags.add(tag);
     }
     setSelectedTags(newTags);
+  };
+
+  const toggleModule = (module: string) => {
+    const newModules = new Set(selectedModules);
+    if (newModules.has(module)) {
+      newModules.delete(module);
+    } else {
+      newModules.add(module);
+    }
+    setSelectedModules(newModules);
   };
 
   useEffect(() => {
@@ -65,6 +87,18 @@ export function FunctionSearch({
         onChange={(e) => setSearchQuery(e.target.value)}
         className="w-full"
       />
+      <div className="flex flex-wrap gap-2">
+        {allModules.map((module) => (
+          <Badge
+            key={`module-${module}`}
+            variant={selectedModules.has(module) ? "default" : "outline"}
+            className="cursor-pointer hover:bg-primary/50 text-lg px-4 py-1 rounded-lg"
+            onClick={() => toggleModule(module)}
+          >
+            {module}
+          </Badge>
+        ))}
+      </div>
       <div className="flex flex-wrap gap-2">
         {allTags.map((tag) => (
           <Badge

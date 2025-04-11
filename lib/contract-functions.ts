@@ -269,6 +269,361 @@ export const contractFunctions: ContractFunction[] = [
       },
     ],
   },
+  {
+    title: "Exchange",
+    moduleName: "token_exchanger",
+    functionName: "exchange",
+    description: "Exchange tokens using the single token exchanger",
+    isEntry: true,
+    tags: ["token", "exchange", "principal"],
+    params: [
+      {
+        name: "exchanger",
+        type: "address",
+        description: "The single token exchanger object address",
+      },
+      {
+        name: "amount_source",
+        type: "u64",
+        description: "Source amount for the exchange",
+      },
+      {
+        name: "amount_target",
+        type: "u64",
+        description: "Target amount for the exchange",
+      },
+      {
+        name: "is_principal",
+        type: "boolean",
+        description: "Flag indicating if the exchange involves principal",
+      },
+    ],
+  },
+  {
+    title: "Attest NAV",
+    moduleName: "share_exchange",
+    functionName: "attest_nav",
+    description: "Attest to the Net Asset Value (NAV) for a specific share",
+    isEntry: true,
+    tags: ["share", "nav", "attestation"],
+    params: [
+      {
+        name: "exchange",
+        type: "address",
+        description: "The share exchange object address",
+      },
+      {
+        name: "share_index",
+        type: "u64",
+        description: "Index of the share",
+      },
+      {
+        name: "nav",
+        type: "u64",
+        description: "Net Asset Value to attest",
+      },
+    ],
+  },
+  {
+    title: "Force Approve Escrow",
+    moduleName: "share_exchange",
+    functionName: "force_approve_escrow",
+    description: "Force approve an escrowed commitment",
+    isEntry: true,
+    tags: ["escrow", "approval", "commitment"],
+    params: [
+      {
+        name: "escrow",
+        type: "address",
+        description: "The escrowed commitment object address",
+      },
+    ],
+  },
+  {
+    title: "Set Period",
+    moduleName: "roda_waterfall",
+    functionName: "set_period",
+    description: "Set the period for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "period", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "start_timestamp",
+        type: "u64",
+        description: "Start timestamp for the period",
+      },
+      {
+        name: "end_timestamp",
+        type: "u64",
+        description: "End timestamp for the period",
+      },
+    ],
+  },
+  {
+    title: "Set Min Utilization Timestamp",
+    moduleName: "roda_waterfall",
+    functionName: "set_min_utilization_timestamp",
+    description: "Set the minimum utilization timestamp for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "utilization", "timestamp", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "min_utilization_timestamp",
+        type: "u64",
+        description: "Minimum utilization timestamp",
+      },
+    ],
+  },
+  {
+    title: "Set Min Utilization",
+    moduleName: "roda_waterfall",
+    functionName: "set_min_utilization",
+    description: "Set the minimum utilization for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "utilization", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "min_utilization",
+        type: "u64",
+        description: "Minimum utilization value",
+      },
+    ],
+  },
+  {
+    title: "Set Default Penalty Interest",
+    moduleName: "roda_waterfall",
+    functionName: "set_default_penalty_interest",
+    description: "Set the default penalty interest for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "penalty", "interest", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "default_penalty_interest",
+        type: "u64",
+        description: "Default penalty interest value",
+      },
+    ],
+  },
+  {
+    title: "Set Min Interest Deficit",
+    moduleName: "roda_waterfall",
+    functionName: "set_min_interest_deficit",
+    description: "Set the minimum interest deficit for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "interest", "deficit", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "min_interest_deficit",
+        type: "u64",
+        description: "Minimum interest deficit value",
+      },
+    ],
+  },
+  {
+    title: "Set Min Util Interest Deficit",
+    moduleName: "roda_waterfall",
+    functionName: "set_min_util_interest_deficit",
+    description: "Set the minimum utilization interest deficit for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "utilization", "interest", "deficit", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "min_util_interest_deficit",
+        type: "u64",
+        description: "Minimum utilization interest deficit value",
+      },
+    ],
+  },
+  {
+    title: "Set Default Penalty Deficit",
+    moduleName: "roda_waterfall",
+    functionName: "set_default_penalty_deficit",
+    description: "Set the default penalty deficit for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "penalty", "deficit", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "default_penalty_deficit",
+        type: "u64",
+        description: "Default penalty deficit value",
+      },
+    ],
+  },
+  {
+    title: "Set Is In Default",
+    moduleName: "roda_waterfall",
+    functionName: "set_is_in_default",
+    description: "Set the default status for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "default", "status", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "is_in_default",
+        type: "boolean",
+        description: "Default status flag",
+      },
+    ],
+  },
+  {
+    title: "Set Is Early Close",
+    moduleName: "roda_waterfall",
+    functionName: "set_is_early_close",
+    description: "Set the early close status for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "early-close", "status", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "is_early_close",
+        type: "boolean",
+        description: "Early close status flag",
+      },
+    ],
+  },
+  {
+    title: "Set Early Close Penalty",
+    moduleName: "roda_waterfall",
+    functionName: "set_early_close_penalty",
+    description: "Set the early close penalty for a RODA waterfall",
+    isEntry: true,
+    tags: ["waterfall", "early-close", "penalty", "configuration"],
+    params: [
+      {
+        name: "roda_waterfall",
+        type: "address",
+        description: "The RODA waterfall object address",
+      },
+      {
+        name: "early_close_penalty",
+        type: "u64",
+        description: "Early close penalty value",
+      },
+    ],
+  },
+  {
+    title: "Create Capital Call Request",
+    moduleName: "facility_core",
+    functionName: "create_capital_call_request",
+    description: "Create a capital call request for a facility",
+    isEntry: true,
+    tags: ["facility", "capital-call", "request"],
+    params: [
+      {
+        name: "facility",
+        type: "address",
+        description: "The facility base details object address",
+      },
+      {
+        name: "amount",
+        type: "u64",
+        description: "Amount for the capital call request",
+      },
+    ],
+  },
+  {
+    title: "Create Recycle Request",
+    moduleName: "facility_core",
+    functionName: "create_recycle_request",
+    description: "Create a recycle request for a facility",
+    isEntry: true,
+    tags: ["facility", "recycle", "request"],
+    params: [
+      {
+        name: "facility",
+        type: "address",
+        description: "The facility base details object address",
+      },
+      {
+        name: "amount",
+        type: "u64",
+        description: "Amount for the recycle request",
+      },
+    ],
+  },
+  {
+    title: "Respond To Capital Call Request",
+    moduleName: "facility_core",
+    functionName: "respond_to_capital_call_request",
+    description: "Respond to a capital call request for a facility",
+    isEntry: true,
+    tags: ["facility", "capital-call", "response"],
+    params: [
+      {
+        name: "facility",
+        type: "address",
+        description: "The facility base details object address",
+      },
+      {
+        name: "approved_amount",
+        type: "u64",
+        description: "Approved amount for the capital call request",
+      },
+    ],
+  },
+  {
+    title: "Respond To Recycle Request",
+    moduleName: "facility_core",
+    functionName: "respond_to_recycle_request",
+    description: "Respond to a recycle request for a facility",
+    isEntry: true,
+    tags: ["facility", "recycle", "response"],
+    params: [
+      {
+        name: "facility",
+        type: "address",
+        description: "The facility base details object address",
+      },
+      {
+        name: "approved_amount",
+        type: "u64",
+        description: "Approved amount for the recycle request",
+      },
+    ],
+  },
 ];
 
 // Utility for tracking transaction status
