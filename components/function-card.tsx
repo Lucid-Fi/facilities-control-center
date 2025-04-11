@@ -89,16 +89,13 @@ export function FunctionCard({
     (name: string, value: unknown, type: ParamType) => {
       let parsedValue = value;
 
-      // Parse the value based on its type
       if (type === "u64" || type === "u128") {
         parsedValue = value === "" ? "" : Number(value);
       } else if (type === "boolean") {
         parsedValue = Boolean(value);
       } else if (type === "address") {
-        // Keep as string
         parsedValue = value;
       } else if (type === "vector<u8>") {
-        // For simplicity, we'll treat vector<u8> as a string
         parsedValue = value;
       }
 
@@ -107,12 +104,10 @@ export function FunctionCard({
     []
   );
 
-  // Create arguments array for query
   const getArgs = useCallback(() => {
     return functionData.params.map((param) => params[param.name] ?? "");
   }, [functionData.params, params]);
 
-  // Use TanStack Query for contract simulation
   const {
     data: simulationResult,
     isLoading: isSimulating,
@@ -120,14 +115,13 @@ export function FunctionCard({
     isError: isSimulationError,
   } = useSimulateContractFunction({
     moduleAddress,
-    functionName: functionData.name,
+    functionName: `${functionData.moduleName}::${functionData.functionName}`,
     args: getArgs(),
     account: walletAccount,
-    enabled: false, // Don't run automatically, only when triggered
+    enabled: false,
     onSimulate,
   });
 
-  // Use TanStack Query for contract submission
   const {
     mutate: submitTransaction,
     isPending: isSubmitting,
@@ -135,7 +129,7 @@ export function FunctionCard({
     data,
   } = useSubmitContractFunction({
     moduleAddress,
-    functionName: functionData.name,
+    functionName: `${functionData.moduleName}::${functionData.functionName}`,
     args: getArgs(),
     account: walletAccount,
     submitFunction: onSubmit,
@@ -154,17 +148,14 @@ export function FunctionCard({
     runSimulation();
   }, [isWalletConnected, runSimulation]);
 
-  // Check if this is a time-related parameter
   const isTimeParam = useCallback((name: string): boolean => {
     return name.toLowerCase().includes("time");
   }, []);
 
-  // Check if this is a facility orchestrator parameter
   const isFacilityOrchestratorParam = useCallback((name: string): boolean => {
     return name === "facility_orchestrator";
   }, []);
 
-  // Construct explorer link
   const explorerLink =
     data?.hash && network?.name
       ? `https://explorer.aptoslabs.com/txn/${
@@ -172,12 +163,7 @@ export function FunctionCard({
         }?network=${network.name.toLowerCase()}`
       : null;
 
-  // We're not using moduleAddress in the component yet but it's passed through
-  // for future use when we need to display module information.
-  // Using the noop function to prevent lint error about unused var
-  React.useEffect(() => {
-    // This is a no-op effect that just ensures moduleAddress is "used"
-  }, [moduleAddress]);
+  React.useEffect(() => {}, [moduleAddress]);
 
   return (
     <Card>
@@ -209,7 +195,7 @@ export function FunctionCard({
               <div key={param.name} className="space-y-2">
                 {isTimeParam(param.name) ? (
                   <DateTimeInput
-                    id={`${functionData.name}-${param.name}`}
+                    id={`${functionData.moduleName}::${functionData.functionName}-${param.name}`}
                     label={param.name}
                     value={params[param.name] ?? ""}
                     onChange={(value) =>
@@ -220,7 +206,7 @@ export function FunctionCard({
                 ) : param.type === "boolean" ? (
                   <div className="space-y-2">
                     <Label
-                      htmlFor={`${functionData.name}-${param.name}`}
+                      htmlFor={`${functionData.moduleName}::${functionData.functionName}-${param.name}`}
                       className="text-sm flex items-center gap-2"
                     >
                       {param.name}
@@ -238,14 +224,14 @@ export function FunctionCard({
                     </Label>
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id={`${functionData.name}-${param.name}`}
+                        id={`${functionData.moduleName}::${functionData.functionName}-${param.name}`}
                         checked={!!params[param.name]}
                         onCheckedChange={(checked) =>
                           handleParamChange(param.name, checked, param.type)
                         }
                       />
                       <label
-                        htmlFor={`${functionData.name}-${param.name}`}
+                        htmlFor={`${functionData.moduleName}::${functionData.functionName}-${param.name}`}
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                       >
                         {param.name}
@@ -256,7 +242,7 @@ export function FunctionCard({
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Label
-                        htmlFor={`${functionData.name}-${param.name}`}
+                        htmlFor={`${functionData.moduleName}::${functionData.functionName}-${param.name}`}
                         className="text-sm"
                       >
                         {param.name}
@@ -274,7 +260,7 @@ export function FunctionCard({
                       </TooltipProvider>
                     </div>
                     <Input
-                      id={`${functionData.name}-${param.name}`}
+                      id={`${functionData.moduleName}::${functionData.functionName}-${param.name}`}
                       placeholder={
                         isFacilityOrchestratorParam(param.name) &&
                         facilityAddress

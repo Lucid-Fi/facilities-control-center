@@ -4,9 +4,11 @@ import { useState, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { WalletSelector } from "./wallet-selector";
 import { FunctionCard } from "./function-card";
+import { FunctionSearch } from "./function-search";
 import {
   contractFunctions,
   type TransactionStatus,
+  type ContractFunction,
 } from "@/lib/contract-functions";
 import { TransactionStatus as TransactionStatusComponent } from "./transaction-status";
 import { Input } from "@/components/ui/input";
@@ -36,6 +38,8 @@ export default function ContractInterface() {
       message: "",
     }
   );
+  const [filteredFunctions, setFilteredFunctions] =
+    useState<ContractFunction[]>(contractFunctions);
 
   // Map wallet network string to SDK Network enum
   const aptosNetwork = useCallback(() => {
@@ -274,10 +278,15 @@ export default function ContractInterface() {
         />
       )}
 
+      <FunctionSearch
+        functions={contractFunctions}
+        onFilteredFunctionsChange={setFilteredFunctions}
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {contractFunctions.map((func) => (
+        {filteredFunctions.map((func) => (
           <FunctionCard
-            key={func.name}
+            key={`${func.moduleName}::${func.functionName}`}
             functionData={func}
             onSubmit={onSubmit}
             onSimulate={handleTransactionSimulate}
