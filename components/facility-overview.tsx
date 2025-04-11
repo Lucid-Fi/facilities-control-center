@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,9 +20,14 @@ interface FacilityData {
   capitalCallTotalAmount: string;
   capitalCallAmountRemaining: string;
   testBasketExists: boolean;
-  testsPass: boolean;
+  testsStatus: "success" | "fail" | "revert";
   capitalCallRequestAmount?: string;
   recycleRequestAmount?: string;
+  maxCapitalCallAmount: string;
+  maxRecycleAmount: string;
+  isInDrawPeriod: boolean;
+  isInRecyclePeriod: boolean;
+  borrowingBase: string;
 }
 
 export function FacilityOverview({
@@ -60,19 +66,9 @@ export function FacilityOverview({
       const client = createAptosClient(aptosNetwork());
 
       try {
-        // Using Promise.all to make all view function calls in parallel
-        const [
-          principalBalance,
-          interestBalance,
-          facilitySize,
-          minDraw,
-          outstandingPrincipal,
-          hasActiveCapitalCall,
-          capitalCallTotalAmount,
-          capitalCallAmountRemaining,
-          testBasketExists,
-          testsPass,
-        ] = await Promise.all([
+        // Using Promise.allSettled to make all view function calls in parallel
+        // and handle individual failures gracefully.
+        const results = await Promise.allSettled([
           // Get principal collection balance
           client.view({
             payload: {
@@ -162,96 +158,257 @@ export function FacilityOverview({
               functionArguments: [facilityAddress],
             },
           }),
+
+          // Get max capital call amount
+          client.view({
+            payload: {
+              function: `${moduleAddress}::facility_core::max_capital_call_amount`,
+              typeArguments: [],
+              functionArguments: [facilityAddress],
+            },
+          }),
+
+          // Get max recycle amount
+          client.view({
+            payload: {
+              function: `${moduleAddress}::facility_core::max_recycle_amount`,
+              typeArguments: [],
+              functionArguments: [facilityAddress],
+            },
+          }),
+
+          // Check if in draw period
+          client.view({
+            payload: {
+              function: `${moduleAddress}::facility_core::in_draw_period`,
+              typeArguments: [],
+              functionArguments: [facilityAddress],
+            },
+          }),
+
+          // Check if in recycle period
+          client.view({
+            payload: {
+              function: `${moduleAddress}::facility_core::in_recycle_period`,
+              typeArguments: [],
+              functionArguments: [facilityAddress],
+            },
+          }),
+
+          // Get current borrowing base
+          client.view({
+            payload: {
+              function: `${moduleAddress}::borrowing_base_engine::evaluate`,
+              typeArguments: [],
+              functionArguments: [facilityAddress],
+            },
+          }),
         ]);
 
+        // Process results from Promise.allSettled
+        const principalBalanceResult = results[0];
+        const interestBalanceResult = results[1];
+        const facilitySizeResult = results[2];
+        const minDrawResult = results[3];
+        const outstandingPrincipalResult = results[4];
+        const hasActiveCapitalCallResult = results[5];
+        const capitalCallTotalAmountResult = results[6];
+        const capitalCallAmountRemainingResult = results[7];
+        const testBasketExistsResult = results[8];
+        const testsPassResult = results[9];
+        const maxCapitalCallAmountResult = results[10];
+        const maxRecycleAmountResult = results[11];
+        const isInDrawPeriodResult = results[12];
+        const isInRecyclePeriodResult = results[13];
+        const borrowingBaseResult = results[14];
+
+        // Helper to extract value or return default
+        const getValueOrDefault = <T, U>(
+          result: PromiseSettledResult<T>,
+          defaultValue: U
+        ): T | U => {
+          return result.status === "fulfilled" ? result.value : defaultValue;
+        };
+
+        // Extract data or use defaults
+        const principalBalance = getValueOrDefault(
+          principalBalanceResult,
+          null
+        );
+        const interestBalance = getValueOrDefault(interestBalanceResult, null);
+        const facilitySize = getValueOrDefault(facilitySizeResult, null);
+        const minDraw = getValueOrDefault(minDrawResult, null);
+        const outstandingPrincipal = getValueOrDefault(
+          outstandingPrincipalResult,
+          null
+        );
+        const hasActiveCapitalCall = getValueOrDefault(
+          hasActiveCapitalCallResult,
+          null
+        );
+        const capitalCallTotalAmount = getValueOrDefault(
+          capitalCallTotalAmountResult,
+          null
+        );
+        const capitalCallAmountRemaining = getValueOrDefault(
+          capitalCallAmountRemainingResult,
+          null
+        );
+        const testBasketExists = getValueOrDefault(
+          testBasketExistsResult,
+          null
+        );
+        const testsPass = getValueOrDefault(testsPassResult, null);
+        const maxCapitalCallAmount = getValueOrDefault(
+          maxCapitalCallAmountResult,
+          null
+        );
+        const maxRecycleAmount = getValueOrDefault(
+          maxRecycleAmountResult,
+          null
+        );
+        const isInDrawPeriod = getValueOrDefault(isInDrawPeriodResult, null);
+        const isInRecyclePeriod = getValueOrDefault(
+          isInRecyclePeriodResult,
+          null
+        );
+        const borrowingBase = getValueOrDefault(borrowingBaseResult, null);
+
         // Fetch resource accounts for admin info since we don't have a direct view function
-        const resourceAccounts = await client.account.getAccountResources({
-          accountAddress: facilityAddress,
-        });
+        let resourceAccounts: any[] = [];
+        let admin: string | undefined = "Unknown";
+        let originator: string | undefined = "Unknown";
+        let capitalCallRequestState: any = null;
+        let recycleRequestState: any = null;
 
-        // Extract facility info from resources
-        const facilityDetails = resourceAccounts.find((r) =>
-          r.type.includes("FacilityBaseDetails")
-        ) as unknown as {
-          data: {
-            admin: { inner: string }; // THIS IS A WHITELIST ADDRESS
-            originator_admin: { value: string }; // THIS IS A WHITELIST ADDRESS
-            originator_receivable_account: string;
-          };
-        };
+        try {
+          resourceAccounts = await client.account.getAccountResources({
+            accountAddress: facilityAddress,
+          });
 
-        const objectDetails = resourceAccounts.find((r) =>
-          r.type.includes("ObjectCore")
-        ) as unknown as {
-          data: {
-            owner: string;
-          };
-        };
-
-        const capitalCallRequestState = resourceAccounts.find(
-          (r) =>
-            r.type.includes("FundingRequestState") &&
-            r.type.includes("CapitalCallRequestTypeTag")
-        ) as unknown as {
-          data: {
-            run_id: {
-              creation_num: string;
-              addr: string;
+          const facilityDetails = resourceAccounts.find((r) =>
+            r.type.includes("FacilityBaseDetails")
+          ) as unknown as {
+            data: {
+              admin: { inner: string };
+              originator_admin: { value: string };
+              originator_receivable_account: string;
             };
-            proposed_max: string[];
           };
-        };
 
-        const recycleRequestState = resourceAccounts.find(
-          (r) =>
-            r.type.includes("FundingRequestState") &&
-            r.type.includes("RecycleRequestTypeTag")
-        ) as unknown as {
-          data: {
-            run_id: {
-              creation_num: string;
-              addr: string;
+          const objectDetails = resourceAccounts.find((r) =>
+            r.type.includes("ObjectCore")
+          ) as unknown as {
+            data: {
+              owner: string;
             };
-            proposed_max: string[];
           };
-        };
 
-        const admin = objectDetails?.data?.owner;
-        const originator = facilityDetails?.data?.originator_receivable_account;
+          capitalCallRequestState = resourceAccounts.find(
+            (r) =>
+              r.type.includes("FundingRequestState") &&
+              r.type.includes("CapitalCallRequestTypeTag")
+          ) as unknown as {
+            data: {
+              run_id: {
+                creation_num: string;
+                addr: string;
+              };
+              proposed_max: {
+                vec: string[];
+              };
+            };
+          };
+
+          recycleRequestState = resourceAccounts.find(
+            (r) =>
+              r.type.includes("FundingRequestState") &&
+              r.type.includes("RecycleRequestTypeTag")
+          ) as unknown as {
+            data: {
+              run_id: {
+                creation_num: string;
+                addr: string;
+              };
+              proposed_max: {
+                vec: string[];
+              };
+            };
+          };
+
+          admin = objectDetails?.data?.owner;
+          originator = facilityDetails?.data?.originator_receivable_account;
+        } catch (resourceError) {
+          console.error("Error fetching resource accounts:", resourceError);
+          // Assign defaults or handle as needed if resource fetching fails
+          admin = "Error fetching";
+          originator = "Error fetching";
+        }
 
         return {
           fundingRequestId:
             capitalCallRequestState?.data?.run_id?.creation_num ||
             recycleRequestState?.data?.run_id?.creation_num,
-          principalCollectionBalance: principalBalance[0]?.toString() || "0",
-          interestCollectionBalance: interestBalance[0]?.toString() || "0",
-          facilitySize: facilitySize[0]?.toString() || "Unknown",
-          minDraw: minDraw[0]?.toString() || "Unknown",
-          outstandingPrincipal: outstandingPrincipal[0]?.toString() || "0",
+          principalCollectionBalance:
+            principalBalance?.[0]?.toString() ?? "Error",
+          interestCollectionBalance:
+            interestBalance?.[0]?.toString() ?? "Error",
+          facilitySize: facilitySize?.[0]?.toString() ?? "Error",
+          minDraw: minDraw?.[0]?.toString() ?? "Error",
+          outstandingPrincipal:
+            outstandingPrincipal?.[0]?.toString() ?? "Error",
           admin: admin || "Unknown",
           originator: originator || "Unknown",
-          hasActiveCapitalCall: hasActiveCapitalCall[0] === true,
-          capitalCallTotalAmount: capitalCallTotalAmount[0]?.toString() || "0",
+          hasActiveCapitalCall: hasActiveCapitalCall?.[0] === true,
+          capitalCallTotalAmount:
+            capitalCallTotalAmount?.[0]?.toString() ?? "Error",
           capitalCallAmountRemaining:
-            capitalCallAmountRemaining[0]?.toString() || "0",
-          testBasketExists: testBasketExists[0] === true,
-          testsPass: testsPass[0] === true,
+            capitalCallAmountRemaining?.[0]?.toString() ?? "Error",
+          testBasketExists: testBasketExists?.[0] === true,
+          testsStatus:
+            testsPass === null
+              ? "revert"
+              : testsPass?.[0] === true
+              ? "success"
+              : "fail",
           capitalCallRequestAmount:
-            capitalCallRequestState?.data?.proposed_max[0]?.toString() || "0",
+            capitalCallRequestState?.data?.proposed_max?.vec[0]?.toString() ||
+            "0",
           recycleRequestAmount:
-            recycleRequestState?.data?.proposed_max[0]?.toString() || "0",
+            recycleRequestState?.data?.proposed_max?.vec[0]?.toString() || "0",
+          maxCapitalCallAmount:
+            maxCapitalCallAmount?.[0]?.toString() ?? "Error",
+          maxRecycleAmount: maxRecycleAmount?.[0]?.toString() ?? "Error",
+          isInDrawPeriod: isInDrawPeriod?.[0] === true,
+          isInRecyclePeriod: isInRecyclePeriod?.[0] === true,
+          borrowingBase: borrowingBase?.[0]?.toString() ?? "Stale",
         };
       } catch (error) {
+        // This catch block might now be less likely to be hit for individual view failures,
+        // but could still catch errors during setup or resource fetching.
         console.error("Error fetching facility data:", error);
-        // If view functions fail, fall back to resource-based approach
+        // Fallback remains, but provides less specific information
         return {
-          principalCollectionBalance: "0",
-          interestCollectionBalance: "0",
+          fundingRequestId: undefined,
+          principalCollectionBalance: "Error",
+          interestCollectionBalance: "Error",
+          facilitySize: "Error",
+          minDraw: "Error",
+          outstandingPrincipal: "Error",
+          admin: "Error",
+          originator: "Error",
           hasActiveCapitalCall: false,
-          capitalCallTotalAmount: "0",
-          capitalCallAmountRemaining: "0",
-          testBasketExists: false,
-          testsPass: false,
+          capitalCallTotalAmount: "Error",
+          capitalCallAmountRemaining: "Error",
+          testBasketExists: false, // Default to false on major error
+          testsStatus: "fail", // Default to false on major error
+          capitalCallRequestAmount: "0",
+          recycleRequestAmount: "0",
+          maxCapitalCallAmount: "Error",
+          maxRecycleAmount: "Error",
+          isInDrawPeriod: false, // Default to false on major error
+          isInRecyclePeriod: false, // Default to false on major error
+          borrowingBase: "Stale",
         };
       }
     },
@@ -262,7 +419,11 @@ export function FacilityOverview({
 
   // Format a number with commas
   const formatNumber = (value: string): string => {
-    return parseInt(value, 10).toLocaleString();
+    const num = parseInt(value, 10);
+    if (isNaN(num)) {
+      return value; // Return original string if it's not a valid number (e.g., "Error", "Unknown")
+    }
+    return num.toLocaleString();
   };
 
   if (!facilityAddress) {
@@ -325,24 +486,56 @@ export function FacilityOverview({
                 Facility Configuration
               </h3>
               <div className="mt-1 space-y-2">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      facilityData.isInDrawPeriod
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {facilityData.isInDrawPeriod
+                      ? "In Draw Period"
+                      : "Not In Draw Period"}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      facilityData.isInRecyclePeriod
+                        ? "bg-purple-100 text-purple-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {facilityData.isInRecyclePeriod
+                      ? "In Recycle Period"
+                      : "Not In Recycle Period"}
+                  </span>
+                </div>
                 {facilityData.testBasketExists && (
                   <div className="mb-2">
                     <div className="text-xs text-gray-500">Facility Tests</div>
                     <div
                       className={`text-sm font-medium flex items-center ${
-                        facilityData.testsPass
+                        facilityData.testsStatus === "success"
                           ? "text-green-600"
-                          : "text-red-600"
+                          : facilityData.testsStatus === "fail"
+                          ? "text-red-600"
+                          : "text-yellow-600"
                       }`}
                     >
                       <span
                         className={`inline-block w-2 h-2 rounded-full mr-1.5 ${
-                          facilityData.testsPass ? "bg-green-500" : "bg-red-500"
+                          facilityData.testsStatus === "success"
+                            ? "bg-green-500"
+                            : facilityData.testsStatus === "fail"
+                            ? "bg-red-500"
+                            : "bg-yellow-500"
                         }`}
                       ></span>
-                      {facilityData.testsPass
+                      {facilityData.testsStatus === "success"
                         ? "All Tests Passing"
-                        : "Tests Failing"}
+                        : facilityData.testsStatus === "fail"
+                        ? "Tests Failing"
+                        : "Tests Reverted (borrowing base is stale)"}
                     </div>
                   </div>
                 )}
@@ -385,6 +578,15 @@ export function FacilityOverview({
                 Financial Info
               </h3>
               <div className="mt-1 space-y-2">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/10">
+                    Max Cap Call:{" "}
+                    {formatNumber(facilityData.maxCapitalCallAmount)}
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-600/10">
+                    Max Recycle: {formatNumber(facilityData.maxRecycleAmount)}
+                  </span>
+                </div>
                 {facilityData.fundingRequestId && (
                   <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
                     <div className="text-xs text-blue-700 font-medium flex items-center">
@@ -430,7 +632,8 @@ export function FacilityOverview({
                   </div>
                 </div>
                 {facilityData.capitalCallRequestAmount &&
-                  parseInt(facilityData.capitalCallRequestAmount) > 0 && (
+                  parseInt(facilityData.capitalCallRequestAmount) > 0 &&
+                  parseInt(facilityData.maxCapitalCallAmount) == 0 && (
                     <div>
                       <div className="text-xs text-gray-500">
                         Pending Capital Call Limit Request
@@ -441,13 +644,26 @@ export function FacilityOverview({
                     </div>
                   )}
                 {facilityData.recycleRequestAmount &&
-                  parseInt(facilityData.recycleRequestAmount) > 0 && (
+                  parseInt(facilityData.recycleRequestAmount) > 0 &&
+                  (facilityData.maxRecycleAmount === "Error" ||
+                    parseInt(facilityData.maxRecycleAmount) == 0) && ( // Check for "Error" too
                     <div>
                       <div className="text-xs text-gray-500">
                         Pending Recycle Limit Request
                       </div>
                       <div className="text-sm font-medium text-purple-600">
                         {formatNumber(facilityData.recycleRequestAmount)}
+                      </div>
+                    </div>
+                  )}
+                {facilityData.borrowingBase &&
+                  facilityData.borrowingBase !== "Error" && (
+                    <div>
+                      <div className="text-xs text-gray-500">
+                        Current Borrowing Base
+                      </div>
+                      <div className="text-sm font-medium">
+                        {formatNumber(facilityData.borrowingBase)}
                       </div>
                     </div>
                   )}
@@ -476,18 +692,28 @@ export function FacilityOverview({
                     <div>
                       <div className="text-xs text-gray-500">Completion</div>
                       <div className="text-sm font-medium">
-                        {parseInt(facilityData.capitalCallTotalAmount) > 0
+                        {parseInt(facilityData.capitalCallTotalAmount, 10) >
+                          0 &&
+                        !isNaN(
+                          parseInt(facilityData.capitalCallTotalAmount, 10)
+                        ) && // Check if total is a valid number
+                        !isNaN(
+                          parseInt(facilityData.capitalCallAmountRemaining, 10)
+                        ) // Check if remaining is a valid number
                           ? `${Math.round(
                               100 *
                                 (1 -
                                   parseInt(
-                                    facilityData.capitalCallAmountRemaining
+                                    facilityData.capitalCallAmountRemaining,
+                                    10
                                   ) /
                                     parseInt(
-                                      facilityData.capitalCallTotalAmount
+                                      facilityData.capitalCallTotalAmount,
+                                      10
                                     ))
                             )}%`
-                          : "0%"}
+                          : "N/A"}{" "}
+                        {/* Show N/A if calculation isn't possible */}
                       </div>
                     </div>
                   </div>

@@ -36,6 +36,7 @@ import {
   useSubmitContractFunction,
 } from "@/lib/use-contract-queries";
 import { AccountInfo, useWallet } from "@aptos-labs/wallet-adapter-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface FunctionCardProps {
   functionData: ContractFunction;
@@ -53,6 +54,13 @@ interface FunctionCardProps {
   walletAccount: AccountInfo | null | undefined;
 }
 
+const facility_aliases = new Set([
+  "facility_orchestrator",
+  "facility",
+  "roda_waterfall",
+  "exchanger",
+]);
+
 export function FunctionCard({
   functionData,
   onSubmit,
@@ -65,6 +73,7 @@ export function FunctionCard({
   const { network } = useWallet();
   const [expanded, setExpanded] = useState(false);
   const [params, setParams] = useState<Record<string, unknown>>({});
+  const queryClient = useQueryClient();
 
   // Set default values for facility_orchestrator parameters when facilityAddress changes
   useEffect(() => {
@@ -73,7 +82,7 @@ export function FunctionCard({
       let hasUpdates = false;
 
       functionData.params.forEach((param) => {
-        if (param.name === "facility_orchestrator" && !params[param.name]) {
+        if (facility_aliases.has(param.name) && !params[param.name]) {
           updatedParams[param.name] = facilityAddress;
           hasUpdates = true;
         }
@@ -133,6 +142,11 @@ export function FunctionCard({
     args: getArgs(),
     account: walletAccount,
     submitFunction: onSubmit,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["facilityData"],
+      });
+    },
   });
 
   const handleSubmit = useCallback(

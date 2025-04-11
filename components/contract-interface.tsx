@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { WalletSelector } from "./wallet-selector";
 import { FunctionCard } from "./function-card";
 import { FunctionSearch } from "./function-search";
 import { FacilityOverview } from "./facility-overview";
@@ -22,13 +21,10 @@ import {
   Network,
 } from "@aptos-labs/ts-sdk";
 import { SimulationResult, simulateTransaction } from "@/lib/aptos-service";
-
 export default function ContractInterface() {
   const searchParams = useSearchParams();
-  const { submitTransaction, connected, account, wallet, network } =
-    useWallet();
+  const { submitTransaction, connected, account, network } = useWallet();
 
-  const [walletAccount, setWalletAccount] = useState<string | null>(null);
   const [moduleAddress, setModuleAddress] = useState<string>("0x1");
   const [inputModuleAddress, setInputModuleAddress] = useState<string>("0x1");
   const [facilityAddress, setFacilityAddress] = useState<string>("");
@@ -48,6 +44,10 @@ export default function ContractInterface() {
     if (network && network.chainId === 2) return Network.TESTNET;
     return Network.DEVNET;
   }, [network]);
+
+  const walletAccount = useMemo(() => {
+    return account?.address.toString();
+  }, [account]);
 
   // Initialize addresses from URL query params
   useEffect(() => {
@@ -83,8 +83,6 @@ export default function ContractInterface() {
         typeArguments: payload.type_arguments,
         functionArguments: payload.arguments as EntryFunctionArgumentTypes[],
       });
-
-      console.log("Transaction result:", result);
 
       return result;
     },
@@ -196,34 +194,6 @@ export default function ContractInterface() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
-        <div>
-          <h2 className="text-xl font-semibold">Contract Functions</h2>
-          <p className="text-sm text-gray-500">
-            Connect your wallet to interact with the contract
-          </p>
-        </div>
-        <WalletSelector
-          onConnect={setWalletAccount}
-          connectedAccount={walletAccount}
-        />
-      </div>
-
-      {connected && account && (
-        <div className="p-4 border rounded-lg bg-blue-50">
-          <h3 className="text-lg font-medium mb-2">Connected Account</h3>
-          <p className="text-sm mb-1">
-            <strong>Address:</strong> {account.address.toString()}
-          </p>
-          <p className="text-sm mb-1">
-            <strong>Network:</strong> {network ? network.name : "Unknown"}
-          </p>
-          <p className="text-sm">
-            <strong>Wallet:</strong> {wallet?.name || "Unknown"}
-          </p>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-4 border rounded-lg">
           <h3 className="text-lg font-medium mb-2">Module Address</h3>
@@ -280,9 +250,9 @@ export default function ContractInterface() {
       )}
 
       {facilityAddress && (
-        <FacilityOverview 
-          facilityAddress={facilityAddress} 
-          moduleAddress={moduleAddress} 
+        <FacilityOverview
+          facilityAddress={facilityAddress}
+          moduleAddress={moduleAddress}
         />
       )}
 

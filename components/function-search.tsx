@@ -8,6 +8,14 @@ interface FunctionSearchProps {
   onFilteredFunctionsChange: (functions: ContractFunction[]) => void;
 }
 
+const formatActorName = (actor: string): string => {
+  if (!actor) return "";
+  return actor
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 export function FunctionSearch({
   functions,
   onFilteredFunctionsChange,
@@ -123,7 +131,7 @@ export function FunctionSearch({
             className="cursor-pointer hover:bg-destructive/80 text-md px-3 py-1 rounded-md"
             onClick={() => toggleActor(actor)}
           >
-            {actor}
+            {formatActorName(actor)}
           </Badge>
         ))}
       </div>

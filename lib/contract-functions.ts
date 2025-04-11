@@ -653,6 +653,75 @@ export const contractFunctions: ContractFunction[] = [
       },
     ],
   },
+  {
+    title: "Create Whitelist",
+    actor: "admin",
+    moduleName: "whitelist",
+    functionName: "create_whitelist",
+    description: "Create a new named whitelist object.",
+    isEntry: true,
+    tags: ["whitelist", "create", "admin"],
+    params: [
+      {
+        name: "name",
+        type: "String",
+        description: "The name for the new whitelist.",
+      },
+    ],
+  },
+  {
+    title: "Toggle Whitelist Member Status",
+    actor: "admin",
+    moduleName: "whitelist",
+    functionName: "toggle",
+    description: "Add or remove an address from a whitelist.",
+    isEntry: true,
+    tags: ["whitelist", "member", "toggle", "admin"],
+    params: [
+      {
+        name: "whitelist_obj",
+        type: "address",
+        description: "The whitelist object address.",
+      },
+      {
+        name: "new_address",
+        type: "address",
+        description: "The address to add or remove.",
+      },
+      {
+        name: "status",
+        type: "boolean",
+        description: "True to add/whitelist, False to remove/unwhitelist.",
+      },
+    ],
+  },
+  {
+    title: "Bulk Toggle Whitelist Member Status",
+    actor: "admin",
+    moduleName: "whitelist",
+    functionName: "bulk_toggle",
+    description: "Add or remove multiple addresses from a whitelist.",
+    isEntry: true,
+    tags: ["whitelist", "member", "bulk", "toggle", "admin"],
+    params: [
+      {
+        name: "whitelist_obj",
+        type: "address",
+        description: "The whitelist object address.",
+      },
+      {
+        name: "new_addresses",
+        type: "String", // Representing vector<address>
+        description:
+          "Comma-separated or JSON array of addresses to add or remove.",
+      },
+      {
+        name: "status",
+        type: "boolean",
+        description: "True to add/whitelist, False to remove/unwhitelist.",
+      },
+    ],
+  },
 ];
 
 // Utility for tracking transaction status

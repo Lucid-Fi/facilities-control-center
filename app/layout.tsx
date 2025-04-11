@@ -14,8 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aptos Move Contract Interface",
-  description: "Connect your wallet and interact with Move contracts on Aptos",
+  title: "Pactlabs: Facility Control Center",
+  description:
+    "Connect your wallet and interact with facility contracts on Aptos",
+  icons: {
+    icon: "/icons/pact-labs.png",
+  },
 };
 
 export default function RootLayout({
@@ -28,9 +32,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <WalletContextProvider>
-          {children}
-        </WalletContextProvider>
+        <WalletContextProvider>{children}</WalletContextProvider>
       </body>
     </html>
   );

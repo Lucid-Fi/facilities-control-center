@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,15 +11,7 @@ import { Wallet, LogOut, AlertCircle } from "lucide-react";
 import { useWallet } from "@/lib/use-wallet";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-interface WalletSelectorProps {
-  onConnect: (account: string | null) => void;
-  connectedAccount: string | null;
-}
-
-export function WalletSelector({
-  onConnect,
-  connectedAccount,
-}: WalletSelectorProps) {
+export function WalletSelector() {
   const {
     connectWallet,
     disconnectWallet,
@@ -31,15 +22,6 @@ export function WalletSelector({
     isWalletConnecting,
     connectionError,
   } = useWallet();
-
-  // Update parent component when wallet connection changes
-  useEffect(() => {
-    if (connected && account) {
-      onConnect(account.address.toString());
-    } else if (!connected && connectedAccount) {
-      onConnect(null);
-    }
-  }, [connected, account, onConnect, connectedAccount]);
 
   const handleConnectWallet = async (walletName: string) => {
     try {
@@ -52,16 +34,16 @@ export function WalletSelector({
   const handleDisconnectWallet = async () => {
     try {
       await disconnectWallet();
-      onConnect(null);
     } catch (error) {
       console.error("Failed to disconnect wallet:", error);
     }
   };
 
-  if (connectedAccount) {
+  if (connected && account) {
+    const connectedAccount = account.address.toString();
     return (
       <div className="flex items-center gap-2">
-        <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium flex items-center">
+        <div className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
           <Wallet className="w-4 h-4 mr-1" />
           <span>Connected{network ? ` (${network.name})` : ""}</span>
         </div>
