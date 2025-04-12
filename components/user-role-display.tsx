@@ -136,13 +136,11 @@ export function UserRoleDisplay() {
   ] = results;
 
   // Don't render anything if not connected, loading, or no facility address
-  if (
-    !connectedAddress ||
-    !facilityAddress ||
-    isLoadingAdmin ||
-    isLoadingOriginatorAdmin ||
-    isLoadingReceivable
-  ) {
+  if (!connectedAddress || !facilityAddress || !moduleAddress) {
+    return null;
+  }
+
+  if (isLoadingAdmin || isLoadingOriginatorAdmin || isLoadingReceivable) {
     return <Badge variant="outline">loading...</Badge>;
   }
 
