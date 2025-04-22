@@ -72,6 +72,33 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
+    title: "Setup Test Facility and Loan Book",
+    actor: "tester",
+    moduleName: "roda_test_harness",
+    functionName: "setup_zvt_facility_internal_with_seed",
+    description:
+      "Set up a test facility with a custom seed prefix and loan book",
+    isEntry: true,
+    tags: ["setup", "facility", "initialization", "custom-seed", "loan-book"],
+    params: [
+      {
+        name: "admin",
+        type: "address",
+        description: "The admin address for the facility",
+      },
+      {
+        name: "originator",
+        type: "address",
+        description: "The originator address for the facility",
+      },
+      {
+        name: "seed_prefix",
+        type: "String",
+        description: "Custom seed prefix for the facility",
+      },
+    ],
+  },
+  {
     title: "Update Attested Borrowing Base Value",
     actor: "fund-manager",
     moduleName: "roda_test_harness",
