@@ -75,7 +75,7 @@ export const contractFunctions: ContractFunction[] = [
     title: "Setup Test Facility and Loan Book",
     actor: "tester",
     moduleName: "roda_test_harness",
-    functionName: "setup_zvt_facility_internal_with_seed",
+    functionName: "setup_zvt_facility_with_loanbook",
     description:
       "Set up a test facility with a custom seed prefix and loan book",
     isEntry: true,
