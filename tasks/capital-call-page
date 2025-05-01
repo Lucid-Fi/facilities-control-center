@@ -1,0 +1,43 @@
+You are a senior frontend engineer, with a decade of experience building dApps and multiple years building on Aptos.
+
+<TASK>
+Create a page dedicated towards running capital call and/or recycle requests. The transactions should be bundled up behind the scences,
+such that the fund manager only has to double check the proposed values and then initiate the transactions OR modify the values.
+
+The flow should be:
+
+1 - IF requested_capital_call_amount > 0 -> approve capital call request (allow the capital call amount to  be modified)
+2 - IF requested_recycle_amount > 0 -> approve recycle request (allow the recycle amount to be modified)
+3 - Attest the borrowing base with the value provided in query params. This value should be modifiable, but in the UI it should be adjusted for decimals! The borrowing base will have 6 decimals
+4 - Run the principal waterfall with the requested amount = requested_recycle_amount + requested_capital_call_amount. This value should be able to be modified. Default to having 'fill_capital_call' as true,
+but allow to be toggled by the caller.
+
+</TASK>
+
+<REQUIREMENTS>
+
+- Values for transaction input should be parsed from query params, or from directly querying the chain
+- Numeric values should have token decimals correctly handled. This means the user should see a human-readable real number, while any on-chain interaction
+uses the decimal-adjusted value. Decimals can be provided through a static mapping, with the default being 8
+- The top of the page should clearly show the most important values. This includes:
+    -- current outstanding principal (6 decimals, USDT)
+    -- current principal collection account balance (6 decimals, USDT)
+    -- current interest collection account balance (6 decimals, USDT)
+    -- current borrowing base
+    -- status of facility tests
+- Each transaction should be simulated and then await manual approval by the user, and a stepper should be used to communicate progress.
+- If the user is NOT an admin, then they should receive a popup message stating they cannot perform this action, and all inputs/buttons should be disabled
+
+</REQUIREMENTS>
+
+<STRETCH_GOAL>
+- run the simulation result of each step through an LLM (assume we have an api key handy), and then have a human-readable description of what changes occur
+- bundle all transactions into one by leveraging the aptos script builder.
+  -- Docs can be found here: https://aptos.dev/en/build/sdks/ts-sdk/building-transactions/script-composer
+</STRETCH_GOAL>
+
+<ADDITIONAL_CONTEXT>
+You can find the move contracts in `contracts/` directory. We also have a page dedicated to generic protocol calls, which can be referenced.
+
+Documentation for the script composer (needed for strech goal 2) can be found at https://aptos.dev/en/build/sdks/ts-sdk/building-transactions/script-composer
+</ADDITIONAL_CONTEXT>

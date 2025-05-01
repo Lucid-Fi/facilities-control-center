@@ -1,6 +1,6 @@
 "use client";
 
-import { InputEntryFunctionData } from "@aptos-labs/ts-sdk";
+import { InputEntryFunctionData, SimpleTransaction } from "@aptos-labs/ts-sdk";
 import { useWallet as useAptosWallet } from "@aptos-labs/wallet-adapter-react";
 import { useState, useCallback, useEffect } from "react";
 
@@ -67,7 +67,7 @@ export function useWallet() {
 
   const submitTransaction = useCallback(
     async (
-      payload: InputEntryFunctionData,
+      payload: InputEntryFunctionData | SimpleTransaction,
       options?: WalletTransactionOptions
     ) => {
       if (!connected || !account) {
