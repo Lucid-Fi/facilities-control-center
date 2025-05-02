@@ -39,14 +39,20 @@ interface TransactionStep {
   args: EntryFunctionArgumentTypes[];
 }
 
+interface AddressBook {
+  [address: string]: string;
+}
+
 interface TransactionStepperProps {
   steps: TransactionStep[];
   onComplete: () => void;
+  addressBook?: AddressBook;
 }
 
 export function TransactionStepper({
   steps,
   onComplete,
+  addressBook,
 }: TransactionStepperProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -270,6 +276,7 @@ export function TransactionStepper({
                   result={simulationResult}
                   isLoading={false}
                   error={null}
+                  addressBook={addressBook}
                 />
               </div>
             )}

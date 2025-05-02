@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { TransactionStepper } from "@/components/transaction-stepper";
 import { parseTokenAmount, formatTokenAmount } from "@/lib/utils/token";
-import { toast } from "sonner";
 import { FacilityOverview } from "@/components/facility-overview";
 import { WalletSelector } from "@/components/wallet-selector";
 import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
+import { toast } from "sonner";
 
 export default function CapitalCallPage() {
   const searchParams = useSearchParams();
@@ -182,6 +182,13 @@ export default function CapitalCallPage() {
           toast.success("Process Complete", {
             description: "All transactions have been executed successfully.",
           });
+        }}
+        addressBook={{
+          "0xa944c37b5ea1bda0d22cb1ead2e18a82ab8f577a7b6647b795225705a7a3a108":
+            "Tiberia",
+          "0x338235eb08a144f4a63966ba79be1fbc9acca5f268ac423700d63bdda48a77be":
+            "Roda",
+          facilityAddress: "Roda Facility",
         }}
       />
     </div>
