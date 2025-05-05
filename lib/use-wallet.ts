@@ -77,7 +77,7 @@ export function useWallet() {
       try {
         return await signAndSubmitTransaction({
           sender: account.address,
-          data: payload,
+          data: payload as InputEntryFunctionData,
           options: {
             maxGasAmount: options?.max_gas_amount,
             gasUnitPrice: options?.gas_unit_price,

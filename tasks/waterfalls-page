@@ -1,0 +1,32 @@
+You are a senior frontend engineer, with a decade of experience building dApps and multiple years building on Aptos.
+
+<TASK>
+Create a page dedicated towards running waterfalls. The transactions should be bundled up behind the scences,
+such that the fund manager only has to double check the proposed values and then initiate the transactions OR modify the values.
+
+The flow should be:
+
+1 - IF requested_capital_call_amount > 0 -> approve capital call request (allow the capital call amount to  be modified)
+2 - IF requested_recycle_amount > 0 -> approve recycle request (allow the recycle amount to be modified)
+3 - Attest the borrowing base with the value provided in query params. This value should be modifiable, but in the UI it should be adjusted for decimals! The borrowing base will have 6 decimals
+4 - Run the principal waterfall with the requested amount = requested_recycle_amount + requested_capital_call_amount. This value should be able to be modified. Default to having 'fill_capital_call' as true,
+but allow to be toggled by the caller.
+5 - Run the interest waterfall with the start and end timestamp provided
+
+</TASK>
+
+<REQUIREMENTS>
+
+- Values for transaction input should be parsed from query params, or from directly querying the chain
+- The page can use the same pattern as capital-call page
+- The start and end timestamp should be derived from a 'month' selector. The start will be the VERY start of the month and the end will be the VERY START of the following month (both UNIX microseconds, UTC+0)
+- Numeric values should have token decimals correctly handled. This means the user should see a human-readable real number, while any on-chain interaction
+uses the decimal-adjusted value. Decimals can be provided through a static mapping, with the default being 8
+- The transaction stepper componnet should be used similarly to how it is used in the capital-call page
+
+</REQUIREMENTS>
+
+
+<ADDITIONAL_CONTEXT>
+You can find the move contracts in `contracts/` directory. We also have a page dedicated to generic protocol calls, which can be referenced.
+</ADDITIONAL_CONTEXT>

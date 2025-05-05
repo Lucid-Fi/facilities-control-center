@@ -2,17 +2,67 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import { DayPicker, MonthChangeEventHandler } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+
+// Create a type for DayPicker props that we expect to use
+type DayPickerProps = React.ComponentProps<typeof DayPicker>
+
+export interface CalendarProps extends Omit<DayPickerProps, 'mode'> {
+  mode?: "single" | "range" | "month" | "multiple" | "default"
+  className?: string
+  classNames?: Record<string, string>
+  showOutsideDays?: boolean
+  selected?: Date | undefined
+  defaultMonth?: Date | undefined
+  onSelect?: (date: Date | undefined) => void
+}
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  mode,
   ...props
-}: React.ComponentProps<typeof DayPicker>) {
+}: CalendarProps) {
+  const [internalMonth, setInternalMonth] = React.useState<Date | undefined>(props.defaultMonth || new Date());
+  
+  const handleMonthChange: MonthChangeEventHandler = (month: Date) => {
+    setInternalMonth(month);
+    if (mode === "month" && props.onSelect) {
+      // When in month mode, selecting a month means selecting the first day of the month
+      const firstDayOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+      props.onSelect(firstDayOfMonth);
+    }
+  };
+  
+  const renderMonthContent = (month: Date) => {
+    if (mode !== "month") return undefined;
+    
+    return (
+      <div
+        className={cn(
+          "w-full h-full flex items-center justify-center p-2 cursor-pointer rounded-md hover:bg-accent",
+          internalMonth && 
+          internalMonth.getMonth() === month.getMonth() && 
+          internalMonth.getFullYear() === month.getFullYear() && 
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (props.onSelect) {
+            const firstDayOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+            props.onSelect(firstDayOfMonth);
+          }
+        }}
+      >
+        {month.toLocaleDateString(undefined, { month: 'short' })}
+      </div>
+    );
+  };
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
@@ -36,7 +86,7 @@ function Calendar({
         row: "flex w-full mt-2",
         cell: cn(
           "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-range-end)]:rounded-r-md",
-          props.mode === "range"
+          mode === "range"
             ? "[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
             : "[&:has([aria-selected])]:rounded-md"
         ),
@@ -67,6 +117,16 @@ function Calendar({
           <ChevronRight className={cn("size-4", className)} {...props} />
         ),
       }}
+      onMonthChange={handleMonthChange}
+      {...(mode === "month" ? { 
+        hideHead: true,
+        formatters: { 
+          formatMonthCaption: (date: Date) => date.toLocaleDateString(undefined, { year: 'numeric' }),
+          formatWeekdayName: () => "" 
+        },
+        renderDay: () => <></>,
+        renderMonth: (month: Date) => renderMonthContent(month)
+      } : {})}
       {...props}
     />
   )

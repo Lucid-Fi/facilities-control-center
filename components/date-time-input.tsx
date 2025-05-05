@@ -201,7 +201,7 @@ export function DateTimeInput({
                   mode="single"
                   selected={date}
                   onSelect={handleDateChange}
-                  initialFocus
+                  initialFocus={true}
                 />
               </PopoverContent>
             </Popover>

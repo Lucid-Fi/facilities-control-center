@@ -1,0 +1,26 @@
+You are a senior frontend engineer, with a decade of experience building dApps and multiple years building on Aptos.
+
+<TASK>
+Create a page dedicated towards allowing the originator to make funding requests.
+
+The flow should be:
+
+1 - IF requested_capital_call_amount > 0 -> initiate capital call request (allow the capital call amount to  be modified)
+2 - IF requested_recycle_amount > 0 -> initiate recycle request (allow the recycle amount to be modified)
+
+</TASK>
+
+<REQUIREMENTS>
+
+- Values for transaction input should be parsed from query params, or from directly querying the chain
+- The page can use the same pattern as capital-call page
+- Numeric values should have token decimals correctly handled. This means the user should see a human-readable real number, while any on-chain interaction
+uses the decimal-adjusted value. Decimals can be provided through a static mapping, with the default being 8
+- The transaction stepper componnet should be used similarly to how it is used in the capital-call page
+
+</REQUIREMENTS>
+
+
+<ADDITIONAL_CONTEXT>
+You can find the move contracts in `contracts/` directory. We also have a page dedicated to generic protocol calls, which can be referenced.
+</ADDITIONAL_CONTEXT>

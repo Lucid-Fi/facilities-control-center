@@ -52,7 +52,6 @@ interface TransactionStepperProps {
 export function TransactionStepper({
   steps,
   onComplete,
-  addressBook,
 }: TransactionStepperProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -276,7 +275,6 @@ export function TransactionStepper({
                   result={simulationResult}
                   isLoading={false}
                   error={null}
-                  addressBook={addressBook}
                 />
               </div>
             )}
