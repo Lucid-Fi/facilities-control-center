@@ -19,6 +19,14 @@ export default function CapitalCallPage() {
   const [borrowingBase, setBorrowingBase] = useState<bigint>(BigInt(0));
   const [fillCapitalCall, setFillCapitalCall] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // State to track which input is being edited (for raw value display)
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValues, setEditValues] = useState({
+    capitalCall: "",
+    recycle: "",
+    borrowingBase: ""
+  });
 
   const facilityAddress = searchParams.get("facility");
   const moduleAddress = searchParams.get("module") || "0x1";
@@ -130,11 +138,28 @@ export default function CapitalCallPage() {
               Capital Call Amount (USDT)
             </label>
             <input
-              type="number"
-              value={formatTokenAmount(requestedCapitalCall, 6)}
-              onChange={(e) =>
-                setRequestedCapitalCall(parseTokenAmount(e.target.value, 6))
-              }
+              type="text"
+              inputMode="decimal"
+              value={editingField === 'capitalCall' 
+                ? editValues.capitalCall 
+                : formatTokenAmount(requestedCapitalCall, 6)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9.]/g, '');
+                setEditValues({...editValues, capitalCall: value});
+                setRequestedCapitalCall(parseTokenAmount(value, 6));
+              }}
+              onFocus={() => {
+                setEditingField('capitalCall');
+                setEditValues({
+                  ...editValues, 
+                  capitalCall: requestedCapitalCall > 0 
+                    ? formatTokenAmount(requestedCapitalCall, 6) 
+                    : ""
+                });
+              }}
+              onBlur={() => {
+                setEditingField(null);
+              }}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -143,11 +168,28 @@ export default function CapitalCallPage() {
               Recycle Amount (USDT)
             </label>
             <input
-              type="number"
-              value={formatTokenAmount(requestedRecycle, 6)}
-              onChange={(e) =>
-                setRequestedRecycle(parseTokenAmount(e.target.value, 6))
-              }
+              type="text"
+              inputMode="decimal"
+              value={editingField === 'recycle' 
+                ? editValues.recycle 
+                : formatTokenAmount(requestedRecycle, 6)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9.]/g, '');
+                setEditValues({...editValues, recycle: value});
+                setRequestedRecycle(parseTokenAmount(value, 6));
+              }}
+              onFocus={() => {
+                setEditingField('recycle');
+                setEditValues({
+                  ...editValues, 
+                  recycle: requestedRecycle > 0 
+                    ? formatTokenAmount(requestedRecycle, 6) 
+                    : ""
+                });
+              }}
+              onBlur={() => {
+                setEditingField(null);
+              }}
               className="w-full p-2 border rounded"
             />
           </div>
@@ -156,11 +198,28 @@ export default function CapitalCallPage() {
               Borrowing Base (USDT)
             </label>
             <input
-              type="number"
-              value={formatTokenAmount(borrowingBase, 6)}
-              onChange={(e) =>
-                setBorrowingBase(parseTokenAmount(e.target.value, 6))
-              }
+              type="text"
+              inputMode="decimal"
+              value={editingField === 'borrowingBase' 
+                ? editValues.borrowingBase 
+                : formatTokenAmount(borrowingBase, 6)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9.]/g, '');
+                setEditValues({...editValues, borrowingBase: value});
+                setBorrowingBase(parseTokenAmount(value, 6));
+              }}
+              onFocus={() => {
+                setEditingField('borrowingBase');
+                setEditValues({
+                  ...editValues, 
+                  borrowingBase: borrowingBase > 0 
+                    ? formatTokenAmount(borrowingBase, 6) 
+                    : ""
+                });
+              }}
+              onBlur={() => {
+                setEditingField(null);
+              }}
               className="w-full p-2 border rounded"
             />
           </div>
