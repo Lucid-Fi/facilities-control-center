@@ -7,6 +7,21 @@ import { createAptosClient } from "@/lib/aptos-service";
 import { useWallet } from "@/lib/use-wallet";
 import { useQuery } from "@tanstack/react-query";
 
+const DECIMAL_PLACES = process.env.NEXT_PUBLIC_TOKEN_DECIMALS
+  ? parseInt(process.env.NEXT_PUBLIC_TOKEN_DECIMALS)
+  : 6;
+
+const adjustForDecimals = (value: string): string => {
+  const num = parseInt(value, 10);
+  if (isNaN(num)) {
+    return value;
+  }
+  return (num / Math.pow(10, DECIMAL_PLACES)).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  });
+};
+
 interface FacilityData {
   fundingRequestId?: string;
   outstandingPrincipal?: string;
@@ -419,11 +434,15 @@ export function FacilityOverview({
 
   // Format a number with commas
   const formatNumber = (value: string): string => {
-    const num = parseInt(value, 10);
+    const adjustedValue = adjustForDecimals(value);
+    const num = parseFloat(adjustedValue);
     if (isNaN(num)) {
-      return value; // Return original string if it's not a valid number (e.g., "Error", "Unknown")
+      return value;
     }
-    return num.toLocaleString();
+    return num.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
   };
 
   if (!facilityAddress) {
