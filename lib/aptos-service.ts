@@ -41,6 +41,9 @@ export interface SimulationResult {
 export const createAptosClient = (network: Network = Network.DEVNET) => {
   const config = new AptosConfig({
     network,
+    clientConfig: {
+      API_KEY: process.env[`APTOS_API_KEY_${network}`],
+    },
   });
 
   return new Aptos(config);
