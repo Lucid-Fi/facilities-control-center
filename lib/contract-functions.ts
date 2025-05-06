@@ -749,6 +749,42 @@ export const contractFunctions: ContractFunction[] = [
       },
     ],
   },
+  {
+    title: "Exchange Tokens by Rate",
+    actor: "originator",
+    moduleName: "facility_test_harness",
+    functionName: "exchange_tokens_by_rate",
+    description: "Exchange tokens using a specified conversion rate",
+    isEntry: true,
+    tags: ["token", "exchange", "rate"],
+    params: [
+      {
+        name: "facility_orchestrator",
+        type: "address",
+        description: "The facility orchestrator object address",
+      },
+      {
+        name: "amount_target",
+        type: "u64",
+        description: "Target amount for the exchange",
+      },
+      {
+        name: "conversion_rate_numerator",
+        type: "u64",
+        description: "Numerator of the conversion rate",
+      },
+      {
+        name: "conversion_rate_denominator",
+        type: "u64",
+        description: "Denominator of the conversion rate",
+      },
+      {
+        name: "is_principal",
+        type: "boolean",
+        description: "Flag indicating if the exchange involves principal",
+      },
+    ],
+  },
 ];
 
 // Utility for tracking transaction status

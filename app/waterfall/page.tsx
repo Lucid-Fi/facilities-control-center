@@ -23,15 +23,18 @@ function WaterfallContent() {
   const [borrowingBase, setBorrowingBase] = useState<bigint>(BigInt(0));
   const [fillCapitalCall, setFillCapitalCall] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
-  
+  const [selectedMonth, setSelectedMonth] = useState<Date>(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  });
+
   // State to track which input is being edited (for raw value display)
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValues, setEditValues] = useState({
     capitalCall: "",
     recycle: "",
     borrowingBase: "",
-    waterfallAmount: ""
+    waterfallAmount: "",
   });
 
   const facilityAddress = searchParams.get("facility");
@@ -40,13 +43,31 @@ function WaterfallContent() {
   // Calculate start and end timestamps for the selected month
   const getMonthTimestamps = (date: Date): [bigint, bigint] => {
     // Start timestamp: beginning of selected month
-    const startDate = new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
-    const startTimestamp = BigInt(Math.floor(startDate.getTime() / 1000)) * BigInt(1000000);
-    
+    const startDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      1,
+      0,
+      0,
+      0,
+      0
+    );
+    const startTimestamp =
+      BigInt(Math.floor(startDate.getTime() / 1000)) * BigInt(1000000);
+
     // End timestamp: beginning of next month
-    const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 1, 0, 0, 0, 0);
-    const endTimestamp = BigInt(Math.floor(endDate.getTime() / 1000)) * BigInt(1000000);
-    
+    const endDate = new Date(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      1,
+      0,
+      0,
+      0,
+      0
+    );
+    const endTimestamp =
+      BigInt(Math.floor(endDate.getTime() / 1000)) * BigInt(1000000);
+
     return [startTimestamp, endTimestamp];
   };
 
@@ -61,11 +82,16 @@ function WaterfallContent() {
     if (capitalCall) setRequestedCapitalCall(parseTokenAmount(capitalCall, 6));
     if (recycle) setRequestedRecycle(parseTokenAmount(recycle, 6));
     if (base) setBorrowingBase(parseTokenAmount(base, 6));
-    
+
     if (month) {
       try {
         const [year, monthIndex] = month.split("-").map(Number);
-        if (!isNaN(year) && !isNaN(monthIndex) && monthIndex >= 1 && monthIndex <= 12) {
+        if (
+          !isNaN(year) &&
+          !isNaN(monthIndex) &&
+          monthIndex >= 1 &&
+          monthIndex <= 12
+        ) {
           // Month indexes are 0-based in JavaScript Date
           setSelectedMonth(new Date(year, monthIndex - 1, 1));
         }
@@ -107,8 +133,8 @@ function WaterfallContent() {
       ] as unknown as EntryFunctionArgumentTypes[],
     },
     {
-      title: "Attest Borrowing Base",
-      description: `Attest borrowing base of ${formatTokenAmount(
+      title: "Attest Collateral Value",
+      description: `Attest collateral value of ${formatTokenAmount(
         borrowingBase,
         6
       )} USDT`,
@@ -138,7 +164,10 @@ function WaterfallContent() {
     },
     {
       title: "Execute Interest Waterfall",
-      description: `Execute interest waterfall for ${format(selectedMonth, 'MMMM yyyy')}`,
+      description: `Execute interest waterfall for ${format(
+        selectedMonth,
+        "MMMM yyyy"
+      )}`,
       moduleAddress: moduleAddress,
       moduleName: "roda_test_harness",
       functionName: "execute_interest_waterfall",
@@ -186,21 +215,24 @@ function WaterfallContent() {
             <input
               type="text"
               inputMode="decimal"
-              value={editingField === 'capitalCall' 
-                ? editValues.capitalCall 
-                : formatTokenAmount(requestedCapitalCall, 6)}
+              value={
+                editingField === "capitalCall"
+                  ? editValues.capitalCall
+                  : formatTokenAmount(requestedCapitalCall, 6)
+              }
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, '');
-                setEditValues({...editValues, capitalCall: value});
+                const value = e.target.value.replace(/[^0-9.]/g, "");
+                setEditValues({ ...editValues, capitalCall: value });
                 setRequestedCapitalCall(parseTokenAmount(value, 6));
               }}
               onFocus={() => {
-                setEditingField('capitalCall');
+                setEditingField("capitalCall");
                 setEditValues({
-                  ...editValues, 
-                  capitalCall: requestedCapitalCall > 0 
-                    ? formatTokenAmount(requestedCapitalCall, 6) 
-                    : ""
+                  ...editValues,
+                  capitalCall:
+                    requestedCapitalCall > 0
+                      ? formatTokenAmount(requestedCapitalCall, 6)
+                      : "",
                 });
               }}
               onBlur={() => {
@@ -216,21 +248,24 @@ function WaterfallContent() {
             <input
               type="text"
               inputMode="decimal"
-              value={editingField === 'recycle' 
-                ? editValues.recycle 
-                : formatTokenAmount(requestedRecycle, 6)}
+              value={
+                editingField === "recycle"
+                  ? editValues.recycle
+                  : formatTokenAmount(requestedRecycle, 6)
+              }
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, '');
-                setEditValues({...editValues, recycle: value});
+                const value = e.target.value.replace(/[^0-9.]/g, "");
+                setEditValues({ ...editValues, recycle: value });
                 setRequestedRecycle(parseTokenAmount(value, 6));
               }}
               onFocus={() => {
-                setEditingField('recycle');
+                setEditingField("recycle");
                 setEditValues({
-                  ...editValues, 
-                  recycle: requestedRecycle > 0 
-                    ? formatTokenAmount(requestedRecycle, 6) 
-                    : ""
+                  ...editValues,
+                  recycle:
+                    requestedRecycle > 0
+                      ? formatTokenAmount(requestedRecycle, 6)
+                      : "",
                 });
               }}
               onBlur={() => {
@@ -241,26 +276,29 @@ function WaterfallContent() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">
-              Borrowing Base (USDT)
+              Collateral Value (USDT)
             </label>
             <input
               type="text"
               inputMode="decimal"
-              value={editingField === 'borrowingBase' 
-                ? editValues.borrowingBase 
-                : formatTokenAmount(borrowingBase, 6)}
+              value={
+                editingField === "borrowingBase"
+                  ? editValues.borrowingBase
+                  : formatTokenAmount(borrowingBase, 6)
+              }
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, '');
-                setEditValues({...editValues, borrowingBase: value});
+                const value = e.target.value.replace(/[^0-9.]/g, "");
+                setEditValues({ ...editValues, borrowingBase: value });
                 setBorrowingBase(parseTokenAmount(value, 6));
               }}
               onFocus={() => {
-                setEditingField('borrowingBase');
+                setEditingField("borrowingBase");
                 setEditValues({
-                  ...editValues, 
-                  borrowingBase: borrowingBase > 0 
-                    ? formatTokenAmount(borrowingBase, 6) 
-                    : ""
+                  ...editValues,
+                  borrowingBase:
+                    borrowingBase > 0
+                      ? formatTokenAmount(borrowingBase, 6)
+                      : "",
                 });
               }}
               onBlur={() => {
@@ -270,15 +308,6 @@ function WaterfallContent() {
             />
           </div>
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="fill-capital-call"
-                checked={fillCapitalCall}
-                onCheckedChange={setFillCapitalCall}
-              />
-              <Label htmlFor="fill-capital-call">Fill Capital Call</Label>
-            </div>
-            
             <div>
               <label className="block text-sm font-medium mb-2">
                 Month for Interest Waterfall
@@ -288,9 +317,29 @@ function WaterfallContent() {
                 setMonth={(date) => date && setSelectedMonth(date)}
               />
               <div className="mt-2 text-xs text-gray-500">
-                <div>Start: {format(new Date(Number(startTimestamp / BigInt(1000000)) * 1000), 'yyyy-MM-dd HH:mm:ss')}</div>
-                <div>End: {format(new Date(Number(endTimestamp / BigInt(1000000)) * 1000), 'yyyy-MM-dd HH:mm:ss')}</div>
+                <div>
+                  Start:{" "}
+                  {format(
+                    new Date(Number(startTimestamp / BigInt(1000000)) * 1000),
+                    "yyyy-MM-dd HH:mm:ss"
+                  )}
+                </div>
+                <div>
+                  End:{" "}
+                  {format(
+                    new Date(Number(endTimestamp / BigInt(1000000)) * 1000),
+                    "yyyy-MM-dd HH:mm:ss"
+                  )}
+                </div>
               </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="fill-capital-call"
+                checked={fillCapitalCall}
+                onCheckedChange={setFillCapitalCall}
+              />
+              <Label htmlFor="fill-capital-call">Fill Capital Call</Label>
             </div>
           </div>
         </div>

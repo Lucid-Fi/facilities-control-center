@@ -155,6 +155,25 @@ module lucid::facility_test_harness {
         );
     }
 
+    public entry fun exchange_tokens_by_rate(
+        signer: &signer,
+        facility_orchestrator: Object<FacilityOrchestrator>,
+        amount_target: u64,
+        conversion_rate_numerator: u64,
+        conversion_rate_denominator: u64,
+        is_principal: bool
+    ) {
+        let token_exchanger = object::convert(facility_orchestrator);
+        let source_amount = amount_target * conversion_rate_numerator / conversion_rate_denominator;
+        token_exchanger::exchange(
+            signer,
+            token_exchanger,
+            source_amount,
+            amount_target,
+            is_principal
+        );
+    }
+
     entry public fun contribute_principal(
         facility_orchestrator: Object<FacilityOrchestrator>, share_index: u64, amount: u64
     ) acquires TestToken {
