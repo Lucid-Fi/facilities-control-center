@@ -19,13 +19,13 @@ function CapitalCallContent() {
   const [borrowingBase, setBorrowingBase] = useState<bigint>(BigInt(0));
   const [fillCapitalCall, setFillCapitalCall] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // State to track which input is being edited (for raw value display)
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValues, setEditValues] = useState({
     capitalCall: "",
     recycle: "",
-    borrowingBase: ""
+    borrowingBase: "",
   });
 
   const facilityAddress = searchParams.get("facility");
@@ -42,6 +42,13 @@ function CapitalCallContent() {
 
     setIsLoading(false);
   }, [searchParams]);
+
+  console.log([
+    borrowingBase.toString(),
+    facilityAddress,
+    (requestedCapitalCall + requestedRecycle).toString(),
+    fillCapitalCall,
+  ]);
 
   const steps = [
     {
@@ -140,21 +147,24 @@ function CapitalCallContent() {
             <input
               type="text"
               inputMode="decimal"
-              value={editingField === 'capitalCall' 
-                ? editValues.capitalCall 
-                : formatTokenAmount(requestedCapitalCall, 6)}
+              value={
+                editingField === "capitalCall"
+                  ? editValues.capitalCall
+                  : formatTokenAmount(requestedCapitalCall, 6)
+              }
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, '');
-                setEditValues({...editValues, capitalCall: value});
+                const value = e.target.value.replace(/[^0-9.]/g, "");
+                setEditValues({ ...editValues, capitalCall: value });
                 setRequestedCapitalCall(parseTokenAmount(value, 6));
               }}
               onFocus={() => {
-                setEditingField('capitalCall');
+                setEditingField("capitalCall");
                 setEditValues({
-                  ...editValues, 
-                  capitalCall: requestedCapitalCall > 0 
-                    ? formatTokenAmount(requestedCapitalCall, 6) 
-                    : ""
+                  ...editValues,
+                  capitalCall:
+                    requestedCapitalCall > 0
+                      ? formatTokenAmount(requestedCapitalCall, 6)
+                      : "",
                 });
               }}
               onBlur={() => {
@@ -170,21 +180,24 @@ function CapitalCallContent() {
             <input
               type="text"
               inputMode="decimal"
-              value={editingField === 'recycle' 
-                ? editValues.recycle 
-                : formatTokenAmount(requestedRecycle, 6)}
+              value={
+                editingField === "recycle"
+                  ? editValues.recycle
+                  : formatTokenAmount(requestedRecycle, 6)
+              }
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, '');
-                setEditValues({...editValues, recycle: value});
+                const value = e.target.value.replace(/[^0-9.]/g, "");
+                setEditValues({ ...editValues, recycle: value });
                 setRequestedRecycle(parseTokenAmount(value, 6));
               }}
               onFocus={() => {
-                setEditingField('recycle');
+                setEditingField("recycle");
                 setEditValues({
-                  ...editValues, 
-                  recycle: requestedRecycle > 0 
-                    ? formatTokenAmount(requestedRecycle, 6) 
-                    : ""
+                  ...editValues,
+                  recycle:
+                    requestedRecycle > 0
+                      ? formatTokenAmount(requestedRecycle, 6)
+                      : "",
                 });
               }}
               onBlur={() => {
@@ -200,21 +213,24 @@ function CapitalCallContent() {
             <input
               type="text"
               inputMode="decimal"
-              value={editingField === 'borrowingBase' 
-                ? editValues.borrowingBase 
-                : formatTokenAmount(borrowingBase, 6)}
+              value={
+                editingField === "borrowingBase"
+                  ? editValues.borrowingBase
+                  : formatTokenAmount(borrowingBase, 6)
+              }
               onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, '');
-                setEditValues({...editValues, borrowingBase: value});
+                const value = e.target.value.replace(/[^0-9.]/g, "");
+                setEditValues({ ...editValues, borrowingBase: value });
                 setBorrowingBase(parseTokenAmount(value, 6));
               }}
               onFocus={() => {
-                setEditingField('borrowingBase');
+                setEditingField("borrowingBase");
                 setEditValues({
-                  ...editValues, 
-                  borrowingBase: borrowingBase > 0 
-                    ? formatTokenAmount(borrowingBase, 6) 
-                    : ""
+                  ...editValues,
+                  borrowingBase:
+                    borrowingBase > 0
+                      ? formatTokenAmount(borrowingBase, 6)
+                      : "",
                 });
               }}
               onBlur={() => {

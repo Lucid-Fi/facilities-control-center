@@ -17,8 +17,7 @@ const adjustForDecimals = (value: string): string => {
     return value;
   }
   return (num / Math.pow(10, DECIMAL_PLACES)).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 4,
+    maximumFractionDigits: 2,
   });
 };
 
@@ -432,19 +431,6 @@ export function FacilityOverview({
     staleTime: 15000, // Consider data stale after 15 seconds
   });
 
-  // Format a number with commas
-  const formatNumber = (value: string): string => {
-    const adjustedValue = adjustForDecimals(value);
-    const num = parseFloat(adjustedValue);
-    if (isNaN(num)) {
-      return value;
-    }
-    return num.toLocaleString(undefined, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    });
-  };
-
   if (!facilityAddress) {
     return (
       <Card>
@@ -562,7 +548,7 @@ export function FacilityOverview({
                   <div className="text-xs text-gray-500">Facility Size</div>
                   <div className="text-sm font-medium">
                     {facilityData.facilitySize
-                      ? formatNumber(facilityData.facilitySize)
+                      ? adjustForDecimals(facilityData.facilitySize)
                       : "Unknown"}
                   </div>
                 </div>
@@ -570,7 +556,7 @@ export function FacilityOverview({
                   <div className="text-xs text-gray-500">Minimum Draw</div>
                   <div className="text-sm font-medium">
                     {facilityData.minDraw
-                      ? formatNumber(facilityData.minDraw)
+                      ? adjustForDecimals(facilityData.minDraw)
                       : "Unknown"}
                   </div>
                 </div>
@@ -600,10 +586,11 @@ export function FacilityOverview({
                 <div className="flex flex-wrap gap-2 items-center">
                   <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/10">
                     Max Cap Call:{" "}
-                    {formatNumber(facilityData.maxCapitalCallAmount)}
+                    {adjustForDecimals(facilityData.maxCapitalCallAmount)}
                   </span>
                   <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-inset ring-violet-600/10">
-                    Max Recycle: {formatNumber(facilityData.maxRecycleAmount)}
+                    Max Recycle:{" "}
+                    {adjustForDecimals(facilityData.maxRecycleAmount)}
                   </span>
                 </div>
                 {facilityData.fundingRequestId && (
@@ -631,7 +618,9 @@ export function FacilityOverview({
                     Outstanding Principal
                   </div>
                   <div className="text-sm font-medium">
-                    {formatNumber(facilityData.outstandingPrincipal || "0")}
+                    {adjustForDecimals(
+                      facilityData.outstandingPrincipal || "0"
+                    )}
                   </div>
                 </div>
                 <div>
@@ -639,7 +628,7 @@ export function FacilityOverview({
                     Principal Collection Balance
                   </div>
                   <div className="text-sm font-medium">
-                    {formatNumber(facilityData.principalCollectionBalance)}
+                    {adjustForDecimals(facilityData.principalCollectionBalance)}
                   </div>
                 </div>
                 <div>
@@ -647,7 +636,7 @@ export function FacilityOverview({
                     Interest Collection Balance
                   </div>
                   <div className="text-sm font-medium">
-                    {formatNumber(facilityData.interestCollectionBalance)}
+                    {adjustForDecimals(facilityData.interestCollectionBalance)}
                   </div>
                 </div>
                 {facilityData.capitalCallRequestAmount &&
@@ -658,7 +647,9 @@ export function FacilityOverview({
                         Pending Capital Call Limit Request
                       </div>
                       <div className="text-sm font-medium text-orange-600">
-                        {formatNumber(facilityData.capitalCallRequestAmount)}
+                        {adjustForDecimals(
+                          facilityData.capitalCallRequestAmount
+                        )}
                       </div>
                     </div>
                   )}
@@ -671,7 +662,7 @@ export function FacilityOverview({
                         Pending Recycle Limit Request
                       </div>
                       <div className="text-sm font-medium text-purple-600">
-                        {formatNumber(facilityData.recycleRequestAmount)}
+                        {adjustForDecimals(facilityData.recycleRequestAmount)}
                       </div>
                     </div>
                   )}
@@ -682,7 +673,7 @@ export function FacilityOverview({
                         Current Borrowing Base
                       </div>
                       <div className="text-sm font-medium">
-                        {formatNumber(facilityData.borrowingBase)}
+                        {adjustForDecimals(facilityData.borrowingBase)}
                       </div>
                     </div>
                   )}
@@ -697,7 +688,7 @@ export function FacilityOverview({
                     <div>
                       <div className="text-xs text-gray-500">Total Amount</div>
                       <div className="text-sm font-medium">
-                        {formatNumber(facilityData.capitalCallTotalAmount)}
+                        {adjustForDecimals(facilityData.capitalCallTotalAmount)}
                       </div>
                     </div>
                     <div>
@@ -705,7 +696,9 @@ export function FacilityOverview({
                         Remaining Amount
                       </div>
                       <div className="text-sm font-medium">
-                        {formatNumber(facilityData.capitalCallAmountRemaining)}
+                        {adjustForDecimals(
+                          facilityData.capitalCallAmountRemaining
+                        )}
                       </div>
                     </div>
                     <div>
