@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { SimulationResults } from "@/components/simulation-results";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ReactNode } from "react";
 
 interface TransactionStep {
   title: string;
@@ -47,11 +48,15 @@ interface TransactionStepperProps {
   steps: TransactionStep[];
   onComplete: () => void;
   addressBook?: AddressBook;
+  renderCustomSimulationResults?: (
+    simulationResult: SimulationResult
+  ) => ReactNode;
 }
 
 export function TransactionStepper({
   steps,
   onComplete,
+  renderCustomSimulationResults,
 }: TransactionStepperProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -271,11 +276,15 @@ export function TransactionStepper({
             </AlertDialogHeader>
             {simulationResult && (
               <div className="mt-4 overflow-x-auto">
-                <SimulationResults
-                  result={simulationResult}
-                  isLoading={false}
-                  error={null}
-                />
+                {renderCustomSimulationResults ? (
+                  renderCustomSimulationResults(simulationResult)
+                ) : (
+                  <SimulationResults
+                    result={simulationResult}
+                    isLoading={false}
+                    error={null}
+                  />
+                )}
               </div>
             )}
             <AlertDialogFooter>

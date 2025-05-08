@@ -12,6 +12,11 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { MonthPicker } from "@/components/ui/month-picker";
 import { format } from "date-fns";
+import { SimulationResult } from "@/lib/aptos-service";
+import { SimulationResults } from "@/components/simulation-results";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SimulationResultChange } from "@/lib/types/simulation";
+import { calculateEffectiveAdvanceRateString } from "@/lib/utils/simulationCalculations";
 
 function WaterfallContent() {
   const searchParams = useSearchParams();
@@ -20,7 +25,7 @@ function WaterfallContent() {
     BigInt(0)
   );
   const [requestedRecycle, setRequestedRecycle] = useState<bigint>(BigInt(0));
-  const [borrowingBase, setBorrowingBase] = useState<bigint>(BigInt(0));
+  const [adjustedCollateral, setBorrowingBase] = useState<bigint>(BigInt(0));
   const [fillCapitalCall, setFillCapitalCall] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<Date>(() => {
@@ -33,7 +38,7 @@ function WaterfallContent() {
   const [editValues, setEditValues] = useState({
     capitalCall: "",
     recycle: "",
-    borrowingBase: "",
+    adjustedCollateral: "",
     waterfallAmount: "",
   });
 
@@ -76,7 +81,7 @@ function WaterfallContent() {
   useEffect(() => {
     const capitalCall = searchParams.get("capital_call");
     const recycle = searchParams.get("recycle");
-    const base = searchParams.get("borrowing_base");
+    const base = searchParams.get("adjusted_collateral");
     const month = searchParams.get("month"); // Format: YYYY-MM (e.g., 2025-05)
 
     if (capitalCall) setRequestedCapitalCall(parseTokenAmount(capitalCall, 6));
@@ -135,7 +140,7 @@ function WaterfallContent() {
     {
       title: "Attest Collateral Value",
       description: `Attest collateral value of ${formatTokenAmount(
-        borrowingBase,
+        adjustedCollateral,
         6
       )} USDT`,
       moduleAddress: moduleAddress,
@@ -143,7 +148,7 @@ function WaterfallContent() {
       functionName: "update_attested_borrowing_base_value",
       args: [
         facilityAddress,
-        borrowingBase.toString(),
+        adjustedCollateral.toString(),
       ] as unknown as EntryFunctionArgumentTypes[],
     },
     {
@@ -156,7 +161,7 @@ function WaterfallContent() {
       moduleName: "roda_test_harness",
       functionName: "run_principal_waterfall",
       args: [
-        borrowingBase.toString(),
+        adjustedCollateral.toString(),
         facilityAddress,
         (requestedCapitalCall + requestedRecycle).toString(),
         fillCapitalCall,
@@ -183,6 +188,41 @@ function WaterfallContent() {
     if (step.title === "Approve Recycle") return requestedRecycle > BigInt(0);
     return true;
   });
+
+  const renderWaterfallSimulationDetails = (
+    simulationResult: SimulationResult
+  ) => {
+    const effectiveAdvanceRate = calculateEffectiveAdvanceRateString(
+      simulationResult.changes as SimulationResultChange[],
+      facilityAddress,
+      undefined // No specific URL param for fallback advance rate here
+    );
+
+    return (
+      <Tabs defaultValue="standard" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="standard">Standard Results</TabsTrigger>
+          <TabsTrigger value="custom">Advance Rate Details</TabsTrigger>
+        </TabsList>
+        <TabsContent value="standard">
+          <SimulationResults
+            result={simulationResult}
+            isLoading={false}
+            error={null}
+          />
+        </TabsContent>
+        <TabsContent value="custom">
+          <div className="p-4 space-y-2">
+            <h3 className="text-lg font-semibold mb-2">Post-Funding Details</h3>
+            <div>
+              <strong>Effective Post-Funding Advance Rate:</strong>{" "}
+              {effectiveAdvanceRate}
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+    );
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -282,22 +322,22 @@ function WaterfallContent() {
               type="text"
               inputMode="decimal"
               value={
-                editingField === "borrowingBase"
-                  ? editValues.borrowingBase
-                  : formatTokenAmount(borrowingBase, 6)
+                editingField === "adjustedCollateral"
+                  ? editValues.adjustedCollateral
+                  : formatTokenAmount(adjustedCollateral, 6)
               }
               onChange={(e) => {
                 const value = e.target.value.replace(/[^0-9.]/g, "");
-                setEditValues({ ...editValues, borrowingBase: value });
+                setEditValues({ ...editValues, adjustedCollateral: value });
                 setBorrowingBase(parseTokenAmount(value, 6));
               }}
               onFocus={() => {
-                setEditingField("borrowingBase");
+                setEditingField("adjustedCollateral");
                 setEditValues({
                   ...editValues,
-                  borrowingBase:
-                    borrowingBase > 0
-                      ? formatTokenAmount(borrowingBase, 6)
+                  adjustedCollateral:
+                    adjustedCollateral > 0
+                      ? formatTokenAmount(adjustedCollateral, 6)
                       : "",
                 });
               }}
@@ -359,6 +399,7 @@ function WaterfallContent() {
             "Roda",
           facilityAddress: "Roda Facility",
         }}
+        renderCustomSimulationResults={renderWaterfallSimulationDetails}
       />
     </div>
   );

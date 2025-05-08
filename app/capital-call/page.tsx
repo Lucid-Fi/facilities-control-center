@@ -8,6 +8,13 @@ import { FacilityOverview } from "@/components/facility-overview";
 import { WalletSelector } from "@/components/wallet-selector";
 import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
 import { toast } from "sonner";
+import { SimulationResult } from "@/lib/aptos-service";
+import { SimulationResults } from "@/components/simulation-results";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SimulationResultChange } from "@/lib/types/simulation"; // Import shared types
+import { calculateEffectiveAdvanceRateString } from "@/lib/utils/simulationCalculations"; // Import utility function
+
+// Removed local interface definitions
 
 function CapitalCallContent() {
   const searchParams = useSearchParams();
@@ -16,8 +23,9 @@ function CapitalCallContent() {
     BigInt(0)
   );
   const [requestedRecycle, setRequestedRecycle] = useState<bigint>(BigInt(0));
-  const [borrowingBase, setBorrowingBase] = useState<bigint>(BigInt(0));
+  const [adjustedCollateral, setBorrowingBase] = useState<bigint>(BigInt(0));
   const [fillCapitalCall, setFillCapitalCall] = useState(true);
+  const [advanceRate, setAdvanceRate] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
 
   // State to track which input is being edited (for raw value display)
@@ -25,7 +33,7 @@ function CapitalCallContent() {
   const [editValues, setEditValues] = useState({
     capitalCall: "",
     recycle: "",
-    borrowingBase: "",
+    adjustedCollateral: "",
   });
 
   const facilityAddress = searchParams.get("facility");
@@ -34,21 +42,16 @@ function CapitalCallContent() {
   useEffect(() => {
     const capitalCall = searchParams.get("capital_call");
     const recycle = searchParams.get("recycle");
-    const base = searchParams.get("borrowing_base");
+    const base = searchParams.get("adjusted_collateral");
+    const advanceRateParam = searchParams.get("advance_rate");
 
     if (capitalCall) setRequestedCapitalCall(parseTokenAmount(capitalCall, 6));
     if (recycle) setRequestedRecycle(parseTokenAmount(recycle, 6));
     if (base) setBorrowingBase(parseTokenAmount(base, 6));
+    if (advanceRateParam) setAdvanceRate(parseFloat(advanceRateParam));
 
     setIsLoading(false);
   }, [searchParams]);
-
-  console.log([
-    borrowingBase.toString(),
-    facilityAddress,
-    (requestedCapitalCall + requestedRecycle).toString(),
-    fillCapitalCall,
-  ]);
 
   const steps = [
     {
@@ -81,8 +84,8 @@ function CapitalCallContent() {
     },
     {
       title: "Attest Borrowing Base",
-      description: `Attest borrowing base of ${formatTokenAmount(
-        borrowingBase,
+      description: `Attest adjusted collateral value of ${formatTokenAmount(
+        adjustedCollateral,
         6
       )} USDT`,
       moduleAddress: moduleAddress,
@@ -90,7 +93,7 @@ function CapitalCallContent() {
       functionName: "update_attested_borrowing_base_value",
       args: [
         facilityAddress,
-        borrowingBase.toString(),
+        adjustedCollateral.toString(),
       ] as unknown as EntryFunctionArgumentTypes[],
     },
     {
@@ -103,7 +106,7 @@ function CapitalCallContent() {
       moduleName: "roda_test_harness",
       functionName: "run_principal_waterfall",
       args: [
-        borrowingBase.toString(),
+        adjustedCollateral.toString(),
         facilityAddress,
         (requestedCapitalCall + requestedRecycle).toString(),
         fillCapitalCall,
@@ -115,6 +118,51 @@ function CapitalCallContent() {
     if (step.title === "Approve Recycle") return requestedRecycle > BigInt(0);
     return true;
   });
+
+  const renderCapitalCallSimulationDetails = (
+    simulationResult: SimulationResult
+  ) => {
+    const effectiveAdvanceRate = calculateEffectiveAdvanceRateString(
+      simulationResult.changes as SimulationResultChange[],
+      facilityAddress,
+      advanceRate // Pass the advanceRate state as fallback
+    );
+
+    const requiredAdvanceRateDisplay =
+      advanceRate > 0
+        ? (advanceRate * 100).toFixed(2) + "%"
+        : "N/A (Not provided in URL)";
+
+    return (
+      <Tabs defaultValue="standard" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="standard">Standard Results</TabsTrigger>
+          <TabsTrigger value="custom">Advance Rate Details</TabsTrigger>
+        </TabsList>
+        <TabsContent value="standard">
+          <SimulationResults
+            result={simulationResult}
+            isLoading={false}
+            error={null}
+          />
+        </TabsContent>
+        <TabsContent value="custom">
+          <div className="p-4 space-y-2">
+            <h3 className="text-lg font-semibold mb-2">Post-Funding Details</h3>
+            <div>
+              <strong>Required Advance Rate (from URL):</strong>{" "}
+              {requiredAdvanceRateDisplay}
+            </div>
+            <div>
+              <strong>Effective Post-Funding Advance Rate:</strong>{" "}
+              {effectiveAdvanceRate}
+            </div>
+            {/* You can add more custom details here based on simulationResult */}
+          </div>
+        </TabsContent>
+      </Tabs>
+    );
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -214,22 +262,22 @@ function CapitalCallContent() {
               type="text"
               inputMode="decimal"
               value={
-                editingField === "borrowingBase"
-                  ? editValues.borrowingBase
-                  : formatTokenAmount(borrowingBase, 6)
+                editingField === "adjustedCollateral"
+                  ? editValues.adjustedCollateral
+                  : formatTokenAmount(adjustedCollateral, 6)
               }
               onChange={(e) => {
                 const value = e.target.value.replace(/[^0-9.]/g, "");
-                setEditValues({ ...editValues, borrowingBase: value });
+                setEditValues({ ...editValues, adjustedCollateral: value });
                 setBorrowingBase(parseTokenAmount(value, 6));
               }}
               onFocus={() => {
-                setEditingField("borrowingBase");
+                setEditingField("adjustedCollateral");
                 setEditValues({
                   ...editValues,
-                  borrowingBase:
-                    borrowingBase > 0
-                      ? formatTokenAmount(borrowingBase, 6)
+                  adjustedCollateral:
+                    adjustedCollateral > 0
+                      ? formatTokenAmount(adjustedCollateral, 6)
                       : "",
                 });
               }}
@@ -265,6 +313,7 @@ function CapitalCallContent() {
             "Roda",
           facilityAddress: "Roda Facility",
         }}
+        renderCustomSimulationResults={renderCapitalCallSimulationDetails}
       />
     </div>
   );
