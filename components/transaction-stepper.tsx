@@ -15,12 +15,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useWallet } from "@/lib/use-wallet";
-import { simulateTransaction, SimulationResult } from "@/lib/aptos-service";
+import {
+  createAptosClient,
+  simulateTransaction,
+  SimulationResult,
+} from "@/lib/aptos-service";
 import {
   InputEntryFunctionData,
   EntryFunctionArgumentTypes,
-  Aptos,
-  AptosConfig,
   Network,
   WriteSetChangeWriteResource,
   CallArgument,
@@ -98,10 +100,7 @@ export function TransactionStepper({
     setIsExecuting(true);
 
     try {
-      const config = new AptosConfig({
-        network: network?.name || Network.DEVNET,
-      });
-      const client = new Aptos(config);
+      const client = createAptosClient(network?.name || Network.DEVNET);
 
       const transaction = await client.transaction.build.scriptComposer({
         sender: account.address,
@@ -166,11 +165,9 @@ export function TransactionStepper({
     if (!account) return;
 
     try {
+      let txnResult: { hash: string } | undefined;
       if (isBatchMode) {
-        const config = new AptosConfig({
-          network: network?.name || Network.DEVNET,
-        });
-        const client = new Aptos(config);
+        const client = createAptosClient(network?.name || Network.DEVNET);
 
         const transaction = await client.transaction.build.scriptComposer({
           sender: account.address,
@@ -186,9 +183,20 @@ export function TransactionStepper({
           },
         });
 
-        await submitTransaction(transaction, {
-          max_gas_amount: 100000,
-        });
+        const { args, bytecode, type_args } =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (transaction.rawTransaction.payload as any).script;
+
+        txnResult = await submitTransaction(
+          {
+            bytecode,
+            typeArguments: type_args,
+            functionArguments: args,
+          },
+          {
+            max_gas_amount: 100000,
+          }
+        );
         onComplete();
       } else {
         const step = steps[currentStep];
@@ -199,7 +207,7 @@ export function TransactionStepper({
           functionArguments: step.args,
         };
 
-        await submitTransaction(payload, {
+        txnResult = await submitTransaction(payload, {
           max_gas_amount: 100000,
         });
 
@@ -209,15 +217,28 @@ export function TransactionStepper({
           setCurrentStep(currentStep + 1);
         }
       }
+
+      if (txnResult?.hash) {
+        const explorerUrl = `https://explorer.aptoslabs.com/txn/${
+          txnResult.hash
+        }?network=${network?.name?.toLowerCase() || "devnet"}`;
+        toast.success("Transaction submitted successfully!", {
+          action: {
+            label: "View on Explorer",
+            onClick: () => window.open(explorerUrl, "_blank"),
+          },
+        });
+      }
     } catch (error) {
       console.error("Error executing transaction:", error);
+      toast.error("Transaction submission failed", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
     } finally {
       setIsExecuting(false);
       setShowConfirmation(false);
     }
   };
-
-  console.log(simulationResult);
 
   return (
     <Card>

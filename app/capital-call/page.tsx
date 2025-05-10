@@ -13,6 +13,8 @@ import { SimulationResults } from "@/components/simulation-results";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SimulationResultChange } from "@/lib/types/simulation"; // Import shared types
 import { calculateEffectiveAdvanceRateString } from "@/lib/utils/simulationCalculations"; // Import utility function
+import { useFacilityInfo } from "@/lib/hooks/use-facility-data";
+import { Badge } from "@/components/ui/badge";
 
 // Removed local interface definitions
 
@@ -26,6 +28,7 @@ function CapitalCallContent() {
   const [adjustedCollateral, setBorrowingBase] = useState<bigint>(BigInt(0));
   const [fillCapitalCall, setFillCapitalCall] = useState(true);
   const [advanceRate, setAdvanceRate] = useState<number>(0);
+  const [underlyingToken, setUnderlyingToken] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
   // State to track which input is being edited (for raw value display)
@@ -39,17 +42,27 @@ function CapitalCallContent() {
   const facilityAddress = searchParams.get("facility");
   const moduleAddress = searchParams.get("module") || "0x1";
 
+  const {
+    facilityData,
+    isLoading: facilityLoading,
+    error: facilityError,
+  } = useFacilityInfo({
+    facilityAddress: facilityAddress || undefined,
+    moduleAddress: moduleAddress || undefined,
+  });
+
   useEffect(() => {
     const capitalCall = searchParams.get("capital_call");
     const recycle = searchParams.get("recycle");
     const base = searchParams.get("adjusted_collateral");
     const advanceRateParam = searchParams.get("advance_rate");
+    const underlyingToken = searchParams.get("underlying_token");
 
     if (capitalCall) setRequestedCapitalCall(parseTokenAmount(capitalCall, 6));
     if (recycle) setRequestedRecycle(parseTokenAmount(recycle, 6));
     if (base) setBorrowingBase(parseTokenAmount(base, 6));
     if (advanceRateParam) setAdvanceRate(parseFloat(advanceRateParam));
-
+    if (underlyingToken) setUnderlyingToken(underlyingToken);
     setIsLoading(false);
   }, [searchParams]);
 
@@ -83,7 +96,7 @@ function CapitalCallContent() {
       ] as unknown as EntryFunctionArgumentTypes[],
     },
     {
-      title: "Attest Borrowing Base",
+      title: "Attest Adjusted Collateral",
       description: `Attest adjusted collateral value of ${formatTokenAmount(
         adjustedCollateral,
         6
@@ -110,6 +123,18 @@ function CapitalCallContent() {
         facilityAddress,
         (requestedCapitalCall + requestedRecycle).toString(),
         fillCapitalCall,
+      ] as unknown as EntryFunctionArgumentTypes[],
+    },
+    {
+      title: "Forward Funds to Originator",
+      description: "Triggers the escrow forward to the originator",
+      moduleAddress: moduleAddress,
+      moduleName: "escrow",
+      functionName: "forward",
+      args: [
+        facilityData?.originator,
+        underlyingToken,
+        null,
       ] as unknown as EntryFunctionArgumentTypes[],
     },
   ].filter((step) => {
@@ -164,7 +189,7 @@ function CapitalCallContent() {
     );
   };
 
-  if (isLoading) {
+  if (isLoading || facilityLoading) {
     return <div>Loading...</div>;
   }
 
@@ -172,6 +197,10 @@ function CapitalCallContent() {
     return (
       <div>Please provide a facility address in the URL query parameters.</div>
     );
+  }
+
+  if (facilityError) {
+    return <div>Error loading facility data: {facilityError.message}</div>;
   }
 
   return (
@@ -256,7 +285,7 @@ function CapitalCallContent() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">
-              Borrowing Base (USDT)
+              Adjusted Collateral (USDT)
             </label>
             <input
               type="text"
@@ -297,6 +326,15 @@ function CapitalCallContent() {
             <label className="text-sm font-medium">Fill Capital Call</label>
           </div>
         </div>
+        <Badge variant="destructive">
+          Borrowing Base:{" "}
+          {(
+            parseFloat(formatTokenAmount(adjustedCollateral, 6)) * advanceRate
+          ).toLocaleString(undefined, {
+            maximumFractionDigits: 4,
+          })}
+          USDT
+        </Badge>
       </div>
 
       <TransactionStepper

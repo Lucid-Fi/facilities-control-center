@@ -16,14 +16,17 @@ const USDT_DECIMALS = 6;
 function TokenExchangeContent() {
   const searchParams = useSearchParams();
   const [amountTarget, setAmountTarget] = useState<bigint>(BigInt(0));
+  const [interestAmountTarget, setInterestAmountTarget] = useState<bigint>(
+    BigInt(0)
+  );
   const [conversionRate, setConversionRate] = useState<string>("");
-  const [isPrincipal, setIsPrincipal] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   // State to track which input is being edited (for raw value display)
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValues, setEditValues] = useState({
     amountTarget: "",
+    interestAmountTarget: "",
     conversionRate: "",
   });
 
@@ -66,16 +69,19 @@ function TokenExchangeContent() {
       description: `Exchange ${formatTokenAmount(
         amountTarget,
         USDT_DECIMALS
-      )} USDT using rate ${conversionRate}`,
+      )} USDT Principal and ${formatTokenAmount(
+        interestAmountTarget,
+        USDT_DECIMALS
+      )} USDT Interest using rate ${conversionRate}`,
       moduleAddress: moduleAddress,
-      moduleName: "facility_test_harness",
+      moduleName: "roda_test_harness",
       functionName: "exchange_tokens_by_rate",
       args: [
         facilityAddress,
         amountTarget.toString(),
+        interestAmountTarget.toString(),
         rateNumerator.toString(),
         rateDenominator.toString(),
-        isPrincipal,
       ] as unknown as EntryFunctionArgumentTypes[],
     },
   ];
@@ -106,7 +112,7 @@ function TokenExchangeContent() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2">
-              Target Amount (USDT)
+              Principal Amount (USDT)
             </label>
             <input
               type="text"
@@ -128,6 +134,39 @@ function TokenExchangeContent() {
                   amountTarget:
                     amountTarget > 0
                       ? formatTokenAmount(amountTarget, USDT_DECIMALS)
+                      : "",
+                });
+              }}
+              onBlur={() => {
+                setEditingField(null);
+              }}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Interest Amount (USDT)
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={
+                editingField === "interestAmountTarget"
+                  ? editValues.interestAmountTarget
+                  : formatTokenAmount(interestAmountTarget, USDT_DECIMALS)
+              }
+              onChange={(e) => {
+                const value = e.target.value.replace(/[^0-9.]/g, "");
+                setEditValues({ ...editValues, interestAmountTarget: value });
+                setInterestAmountTarget(parseTokenAmount(value, USDT_DECIMALS));
+              }}
+              onFocus={() => {
+                setEditingField("interestAmountTarget");
+                setEditValues({
+                  ...editValues,
+                  interestAmountTarget:
+                    interestAmountTarget > 0
+                      ? formatTokenAmount(interestAmountTarget, USDT_DECIMALS)
                       : "",
                 });
               }}
@@ -166,15 +205,6 @@ function TokenExchangeContent() {
               }}
               className="w-full p-2 border rounded"
             />
-          </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={isPrincipal}
-              onChange={(e) => setIsPrincipal(e.target.checked)}
-              className="mr-2"
-            />
-            <label className="text-sm font-medium">Is Principal</label>
           </div>
         </div>
       </div>

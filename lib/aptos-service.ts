@@ -39,10 +39,11 @@ export interface SimulationResult {
  * Create an Aptos client for the specified network
  */
 export const createAptosClient = (network: Network = Network.DEVNET) => {
+  console.log(`Looking for ${`NEXT_PUBLIC_APTOS_API_KEY_${network}`}`);
   const config = new AptosConfig({
     network,
     clientConfig: {
-      API_KEY: process.env[`APTOS_API_KEY_${network}`],
+      API_KEY: process.env[`NEXT_PUBLIC_APTOS_API_KEY_${network}`],
     },
   });
 

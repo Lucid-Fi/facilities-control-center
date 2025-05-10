@@ -1,6 +1,6 @@
 "use client";
 
-import { InputEntryFunctionData, SimpleTransaction } from "@aptos-labs/ts-sdk";
+import { InputGenerateTransactionPayloadData } from "@aptos-labs/ts-sdk";
 import { useWallet as useAptosWallet } from "@aptos-labs/wallet-adapter-react";
 import { useState, useCallback, useEffect } from "react";
 
@@ -67,7 +67,7 @@ export function useWallet() {
 
   const submitTransaction = useCallback(
     async (
-      payload: InputEntryFunctionData | SimpleTransaction,
+      payload: InputGenerateTransactionPayloadData,
       options?: WalletTransactionOptions
     ) => {
       if (!connected || !account) {
@@ -75,9 +75,10 @@ export function useWallet() {
       }
 
       try {
+        console.log("signAndSubmitTransaction", payload);
         return await signAndSubmitTransaction({
           sender: account.address,
-          data: payload as InputEntryFunctionData,
+          data: payload,
           options: {
             maxGasAmount: options?.max_gas_amount,
             gasUnitPrice: options?.gas_unit_price,
@@ -98,6 +99,7 @@ export function useWallet() {
     signTransaction,
     signMessage,
     signMessageAndVerify,
+    signAndSubmitTransaction,
 
     // State
     isWalletConnecting,
