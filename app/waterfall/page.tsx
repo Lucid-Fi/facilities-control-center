@@ -8,8 +8,6 @@ import { FacilityOverview } from "@/components/facility-overview";
 import { WalletSelector } from "@/components/wallet-selector";
 import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { MonthPicker } from "@/components/ui/month-picker";
 import { format } from "date-fns";
 import { SimulationResult } from "@/lib/aptos-service";
@@ -373,14 +371,17 @@ function WaterfallContent() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="fill-capital-call"
-                checked={fillCapitalCall}
-                onCheckedChange={setFillCapitalCall}
-              />
-              <Label htmlFor="fill-capital-call">Fill Capital Call</Label>
-            </div>
+            {requestedCapitalCall > 0 && (
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={fillCapitalCall}
+                  onChange={(e) => setFillCapitalCall(e.target.checked)}
+                  className="mr-2"
+                />
+                <label className="text-sm font-medium">Fill Capital Call</label>
+              </div>
+            )}
           </div>
         </div>
       </div>

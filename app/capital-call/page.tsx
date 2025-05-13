@@ -316,15 +316,17 @@ function CapitalCallContent() {
               className="w-full p-2 border rounded"
             />
           </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={fillCapitalCall}
-              onChange={(e) => setFillCapitalCall(e.target.checked)}
-              className="mr-2"
-            />
-            <label className="text-sm font-medium">Fill Capital Call</label>
-          </div>
+          {requestedCapitalCall > 0 && (
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={fillCapitalCall}
+                onChange={(e) => setFillCapitalCall(e.target.checked)}
+                className="mr-2"
+              />
+              <label className="text-sm font-medium">Fill Capital Call</label>
+            </div>
+          )}
         </div>
         <Badge variant="destructive">
           Borrowing Base:{" "}
