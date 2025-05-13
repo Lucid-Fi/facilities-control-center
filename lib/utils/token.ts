@@ -12,7 +12,7 @@ export const formatTokenAmount = (
   }
 
   const divisor = BigInt(10) ** BigInt(decimals);
-  let whole = amount / divisor;
+  const whole = amount / divisor;
   const fractional = amount % divisor;
 
   // Format whole part with thousand separators

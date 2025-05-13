@@ -15,6 +15,8 @@ import { SimulationResultChange } from "@/lib/types/simulation"; // Import share
 import { calculateEffectiveAdvanceRateString } from "@/lib/utils/simulationCalculations"; // Import utility function
 import { useFacilityInfo } from "@/lib/hooks/use-facility-data";
 import { Badge } from "@/components/ui/badge";
+import { TokenAmountInput } from "@/components/token-amount-input";
+import { UserRoleDisplay } from "@/components/user-role-display";
 
 // Removed local interface definitions
 
@@ -32,12 +34,12 @@ function CapitalCallContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   // State to track which input is being edited (for raw value display)
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState({
-    capitalCall: "",
-    recycle: "",
-    adjustedCollateral: "",
-  });
+  // const [editingField, setEditingField] = useState<string | null>(null);
+  // const [editValues, setEditValues] = useState({
+  // capitalCall: "",
+  // recycle: "",
+  // adjustedCollateral: "",
+  // });
 
   const facilityAddress = searchParams.get("facility");
   const moduleAddress = searchParams.get("module") || "0x1";
@@ -111,10 +113,17 @@ function CapitalCallContent() {
     },
     {
       title: "Execute Principal Waterfall",
-      description: `Execute waterfall with ${formatTokenAmount(
+      description: `Execute principal waterfall (requested: ${formatTokenAmount(
         requestedCapitalCall + requestedRecycle,
         6
-      )} USDT`,
+      )} USDT, available: ${
+        facilityData?.principalCollectionBalance
+          ? formatTokenAmount(
+              BigInt(facilityData.principalCollectionBalance),
+              6
+            )
+          : "..."
+      } USDT)`,
       moduleAddress: moduleAddress,
       moduleName: "roda_test_harness",
       functionName: "run_principal_waterfall",
@@ -207,7 +216,10 @@ function CapitalCallContent() {
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Capital Call & Recycle</h1>
-        <WalletSelector />
+        <div className="flex flex-col items-end gap-2">
+          <WalletSelector />
+          <UserRoleDisplay />
+        </div>
       </div>
 
       <FacilityOverview
@@ -218,102 +230,30 @@ function CapitalCallContent() {
       <div className="grid gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Capital Call Amount (USDT)
-            </label>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={
-                editingField === "capitalCall"
-                  ? editValues.capitalCall
-                  : formatTokenAmount(requestedCapitalCall, 6)
-              }
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, "");
-                setEditValues({ ...editValues, capitalCall: value });
-                setRequestedCapitalCall(parseTokenAmount(value, 6));
-              }}
-              onFocus={() => {
-                setEditingField("capitalCall");
-                setEditValues({
-                  ...editValues,
-                  capitalCall:
-                    requestedCapitalCall > 0
-                      ? formatTokenAmount(requestedCapitalCall, 6)
-                      : "",
-                });
-              }}
-              onBlur={() => {
-                setEditingField(null);
-              }}
-              className="w-full p-2 border rounded"
+            <TokenAmountInput
+              label="Capital Call Amount (USDT)"
+              initialValue={requestedCapitalCall}
+              onChange={setRequestedCapitalCall}
+              decimals={6}
+              placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Recycle Amount (USDT)
-            </label>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={
-                editingField === "recycle"
-                  ? editValues.recycle
-                  : formatTokenAmount(requestedRecycle, 6)
-              }
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, "");
-                setEditValues({ ...editValues, recycle: value });
-                setRequestedRecycle(parseTokenAmount(value, 6));
-              }}
-              onFocus={() => {
-                setEditingField("recycle");
-                setEditValues({
-                  ...editValues,
-                  recycle:
-                    requestedRecycle > 0
-                      ? formatTokenAmount(requestedRecycle, 6)
-                      : "",
-                });
-              }}
-              onBlur={() => {
-                setEditingField(null);
-              }}
-              className="w-full p-2 border rounded"
+            <TokenAmountInput
+              label="Recycle Amount (USDT)"
+              initialValue={requestedRecycle}
+              onChange={setRequestedRecycle}
+              decimals={6}
+              placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">
-              Adjusted Collateral (USDT)
-            </label>
-            <input
-              type="text"
-              inputMode="decimal"
-              value={
-                editingField === "adjustedCollateral"
-                  ? editValues.adjustedCollateral
-                  : formatTokenAmount(adjustedCollateral, 6)
-              }
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, "");
-                setEditValues({ ...editValues, adjustedCollateral: value });
-                setBorrowingBase(parseTokenAmount(value, 6));
-              }}
-              onFocus={() => {
-                setEditingField("adjustedCollateral");
-                setEditValues({
-                  ...editValues,
-                  adjustedCollateral:
-                    adjustedCollateral > 0
-                      ? formatTokenAmount(adjustedCollateral, 6)
-                      : "",
-                });
-              }}
-              onBlur={() => {
-                setEditingField(null);
-              }}
-              className="w-full p-2 border rounded"
+            <TokenAmountInput
+              label="Adjusted Collateral (USDT)"
+              initialValue={adjustedCollateral}
+              onChange={setBorrowingBase}
+              decimals={6}
+              placeholder="0.00"
             />
           </div>
           {requestedCapitalCall > 0 && (
@@ -340,6 +280,7 @@ function CapitalCallContent() {
       </div>
 
       <TransactionStepper
+        hideBatchMode={true}
         steps={steps}
         onComplete={() => {
           toast.success("Process Complete", {

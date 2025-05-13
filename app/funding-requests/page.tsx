@@ -8,22 +8,25 @@ import { FacilityOverview } from "@/components/facility-overview";
 import { WalletSelector } from "@/components/wallet-selector";
 import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
 import { toast } from "sonner";
+import { TokenAmountInput } from "@/components/token-amount-input";
+import { UserRoleDisplay } from "@/components/user-role-display";
 
 function FundingRequestsContent() {
   const searchParams = useSearchParams();
 
-  const [requestedCapitalCallAmount, setRequestedCapitalCallAmount] = useState<bigint>(
+  const [requestedCapitalCallAmount, setRequestedCapitalCallAmount] =
+    useState<bigint>(BigInt(0));
+  const [requestedRecycleAmount, setRequestedRecycleAmount] = useState<bigint>(
     BigInt(0)
   );
-  const [requestedRecycleAmount, setRequestedRecycleAmount] = useState<bigint>(BigInt(0));
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // State to track which input is being edited (for raw value display)
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [editValues, setEditValues] = useState({
-    capitalCall: "",
-    recycle: ""
-  });
+  // const [editingField, setEditingField] = useState<string | null>(null);
+  // const [editValues, setEditValues] = useState({
+  //   capitalCall: "",
+  //   recycle: ""
+  // });
 
   const facilityAddress = searchParams.get("facility");
   const moduleAddress = searchParams.get("module") || "0x1";
@@ -32,7 +35,8 @@ function FundingRequestsContent() {
     const capitalCall = searchParams.get("capital_call");
     const recycle = searchParams.get("recycle");
 
-    if (capitalCall) setRequestedCapitalCallAmount(parseTokenAmount(capitalCall, 6));
+    if (capitalCall)
+      setRequestedCapitalCallAmount(parseTokenAmount(capitalCall, 6));
     if (recycle) setRequestedRecycleAmount(parseTokenAmount(recycle, 6));
 
     setIsLoading(false);
@@ -91,7 +95,10 @@ function FundingRequestsContent() {
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Funding Requests</h1>
-        <WalletSelector />
+        <div className="flex flex-col items-end gap-2">
+          <WalletSelector />
+          <UserRoleDisplay />
+        </div>
       </div>
 
       <FacilityOverview
@@ -102,7 +109,7 @@ function FundingRequestsContent() {
       <div className="grid gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-2">
+            {/* <label className="block text-sm font-medium mb-2">
               Capital Call Request Amount (USDT)
             </label>
             <input
@@ -129,10 +136,17 @@ function FundingRequestsContent() {
                 setEditingField(null);
               }}
               className="w-full p-2 border rounded"
+            /> */}
+            <TokenAmountInput
+              label="Capital Call Request Amount (USDT)"
+              initialValue={requestedCapitalCallAmount}
+              onChange={setRequestedCapitalCallAmount}
+              decimals={6}
+              placeholder="0.00"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">
+            {/* <label className="block text-sm font-medium mb-2">
               Recycle Request Amount (USDT)
             </label>
             <input
@@ -159,6 +173,13 @@ function FundingRequestsContent() {
                 setEditingField(null);
               }}
               className="w-full p-2 border rounded"
+            /> */}
+            <TokenAmountInput
+              label="Recycle Request Amount (USDT)"
+              initialValue={requestedRecycleAmount}
+              onChange={setRequestedRecycleAmount}
+              decimals={6}
+              placeholder="0.00"
             />
           </div>
         </div>
@@ -196,7 +217,8 @@ function FundingRequestsContent() {
                 clipRule="evenodd"
               />
             </svg>
-            Enter the requested amount for Capital Call or Recycle to initiate a funding request.
+            Enter the requested amount for Capital Call or Recycle to initiate a
+            funding request.
           </p>
         </div>
       )}

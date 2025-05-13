@@ -8,6 +8,7 @@ import { FacilityOverview } from "@/components/facility-overview";
 import { WalletSelector } from "@/components/wallet-selector";
 import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
 import { toast } from "sonner";
+import { UserRoleDisplay } from "@/components/user-role-display";
 
 // Constants for decimal places
 const ZVT_DECIMALS = 8;
@@ -100,7 +101,10 @@ function TokenExchangeContent() {
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Token Exchange</h1>
-        <WalletSelector />
+        <div className="flex flex-col items-end gap-2">
+          <WalletSelector />
+          <UserRoleDisplay />
+        </div>
       </div>
 
       <FacilityOverview
