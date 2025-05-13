@@ -78,6 +78,7 @@ export function DateTimeInput({
 
   // Handle date change
   const handleDateChange = (newDate: Date | undefined) => {
+    console.log("handleDateChange", newDate);
     setDate(newDate);
     if (newDate) {
       const [hours, minutes, seconds] = time.split(":").map(Number);

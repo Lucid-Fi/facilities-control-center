@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Stepper } from "@/components/ui/stepper";
@@ -53,12 +53,14 @@ interface TransactionStepperProps {
   renderCustomSimulationResults?: (
     simulationResult: SimulationResult
   ) => ReactNode;
+  hideBatchMode?: boolean;
 }
 
 export function TransactionStepper({
   steps,
   onComplete,
   renderCustomSimulationResults,
+  hideBatchMode = false,
 }: TransactionStepperProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -66,6 +68,12 @@ export function TransactionStepper({
   const [simulationResult, setSimulationResult] =
     useState<SimulationResult | null>(null);
   const [isBatchMode, setIsBatchMode] = useState(false);
+
+  const handleComplete = useCallback(() => {
+    onComplete();
+    setIsExecuting(false);
+    setCurrentStep(steps.length);
+  }, [onComplete, steps.length]);
 
   const { account, submitTransaction, network } = useWallet();
 
@@ -197,7 +205,7 @@ export function TransactionStepper({
             max_gas_amount: 100000,
           }
         );
-        onComplete();
+        handleComplete();
       } else {
         const step = steps[currentStep];
         const payload: InputEntryFunctionData = {
@@ -212,7 +220,7 @@ export function TransactionStepper({
         });
 
         if (currentStep === steps.length - 1) {
-          onComplete();
+          handleComplete();
         } else {
           setCurrentStep(currentStep + 1);
         }
@@ -246,14 +254,16 @@ export function TransactionStepper({
         <CardTitle>Transaction Steps</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center space-x-2 mb-4">
-          <Switch
-            id="batch-mode"
-            checked={isBatchMode}
-            onCheckedChange={setIsBatchMode}
-          />
-          <Label htmlFor="batch-mode">Batch Mode</Label>
-        </div>
+        {steps.length > 1 && steps.length > currentStep && !hideBatchMode && (
+          <div className="flex items-center space-x-2 mb-4">
+            <Switch
+              id="batch-mode"
+              checked={isBatchMode}
+              onCheckedChange={setIsBatchMode}
+            />
+            <Label htmlFor="batch-mode">Batch Mode</Label>
+          </div>
+        )}
         <Stepper
           steps={steps.map((step, index) => ({
             title: step.title,
@@ -267,24 +277,26 @@ export function TransactionStepper({
           }))}
           onStepClick={handleStepClick}
         />
-        <div className="mt-4">
-          <Button
-            onClick={() =>
-              isBatchMode
-                ? handleBatchSimulation()
-                : handleStepClick(currentStep)
-            }
-            disabled={isExecuting}
-          >
-            {isExecuting
-              ? "Simulating..."
-              : isBatchMode
-              ? "Simulate Batch"
-              : currentStep === steps.length - 1
-              ? "Complete"
-              : "Execute Step"}
-          </Button>
-        </div>
+        {currentStep < steps.length && (
+          <div className="mt-4">
+            <Button
+              onClick={() =>
+                isBatchMode
+                  ? handleBatchSimulation()
+                  : handleStepClick(currentStep)
+              }
+              disabled={isExecuting || currentStep === steps.length}
+            >
+              {isExecuting
+                ? "Simulating..."
+                : isBatchMode
+                ? "Simulate Batch"
+                : currentStep === steps.length - 1
+                ? "Complete"
+                : "Execute Step"}
+            </Button>
+          </div>
+        )}
 
         <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
           <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
@@ -309,7 +321,9 @@ export function TransactionStepper({
               </div>
             )}
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setIsExecuting(false)}>
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction onClick={handleConfirm}>
                 Confirm
               </AlertDialogAction>
