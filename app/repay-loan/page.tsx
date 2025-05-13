@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { TransactionStepper } from "@/components/transaction-stepper";
 import { WalletSelector } from "@/components/wallet-selector";
 import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
@@ -13,6 +14,24 @@ import { TokenAmountInput } from "@/components/token-amount-input";
 import { LoanOverview } from "@/components/loan-overview"; // Assuming this path is correct
 
 const TOKEN_DECIMALS = 8; // Standard for many tokens, adjust if necessary
+
+// Animation variants for the card
+const cardVariants = {
+  hidden: {
+    opacity: 0,
+    height: 0,
+    marginTop: 0,
+    marginBottom: 0,
+    overflow: "hidden",
+  },
+  visible: {
+    opacity: 1,
+    height: "auto",
+    marginTop: "1rem",
+    marginBottom: "1rem",
+    overflow: "visible",
+  },
+};
 
 function RepayLoanContent() {
   const searchParams = useSearchParams();
@@ -35,9 +54,10 @@ function RepayLoanContent() {
   }, [searchParams]);
 
   const handleLoanAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLoanAddress(e.target.value);
-    // Show overview only if there's a loan address
-    setShowOverview(!!e.target.value.trim());
+    const newLoanAddress = e.target.value;
+    setLoanAddress(newLoanAddress);
+    // Show overview only if there's a loan address and it's different from the previous one or if it was previously hidden
+    setShowOverview(!!newLoanAddress.trim());
   };
 
   const transactionArgs = () => {
@@ -102,15 +122,30 @@ function RepayLoanContent() {
               placeholder="e.g., 100.00000000"
             />
           </div>
-          {showOverview && loanAddress && moduleAddress && (
-            <div className="h-[2px] bg-muted rounded-full" />
-          )}
-          {showOverview && loanAddress && moduleAddress && (
-            <LoanOverview
-              loanAddress={loanAddress}
-              moduleAddress={moduleAddress}
-            />
-          )}
+          {/* Animated section for LoanOverview */}
+          <motion.div
+            initial="hidden"
+            animate={
+              showOverview && loanAddress && moduleAddress
+                ? "visible"
+                : "hidden"
+            }
+            variants={cardVariants}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }} // Keep overflow hidden during animation
+          >
+            {showOverview && loanAddress && moduleAddress && (
+              <div className="mt-4">
+                {" "}
+                {/* Added margin top for spacing when visible */}
+                <div className="h-[2px] bg-muted rounded-full mb-4" />
+                <LoanOverview
+                  loanAddress={loanAddress}
+                  moduleAddress={moduleAddress}
+                />
+              </div>
+            )}
+          </motion.div>
         </CardContent>
         {/* CardFooter can be used for action buttons if needed outside TransactionStepper */}
       </Card>
