@@ -99,6 +99,63 @@ export const contractFunctions: ContractFunction[] = [
     ],
   },
   {
+    title: "Setup ZVT Facility",
+    actor: "tester",
+    moduleName: "basic_facility_harness",
+    functionName: "setup_zvt_facility",
+    description:
+      "Set up a ZVT facility with loan book and share configurations",
+    isEntry: true,
+    tags: ["setup", "facility", "initialization", "zvt", "loan-book", "shares"],
+    params: [
+      {
+        name: "admin",
+        type: "address",
+        description: "The admin address for the facility",
+      },
+      {
+        name: "originator",
+        type: "address",
+        description: "The originator address for the facility",
+      },
+      {
+        name: "investor",
+        type: "address",
+        description: "The investor address for the facility",
+      },
+      {
+        name: "underlying_fa",
+        type: "address",
+        description: "The underlying fungible asset object",
+      },
+      {
+        name: "zvt_name",
+        type: "String",
+        description: "Name for the ZVT token",
+      },
+      {
+        name: "zvt_symbol",
+        type: "String",
+        description: "Symbol for the ZVT token",
+      },
+      {
+        name: "loan_book_name",
+        type: "String",
+        description: "Name for the loan book",
+      },
+      {
+        name: "senior_share_name",
+        type: "String",
+        description: "Name for the senior share",
+      },
+      {
+        name: "senior_share_symbol",
+        type: "String",
+        description: "Symbol for the senior share",
+      },
+    ],
+  },
+  {
     title: "Update Attested Borrowing Base Value",
     actor: "fund-manager",
     moduleName: "roda_test_harness",
