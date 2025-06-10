@@ -37,7 +37,7 @@ export interface SimulationResult {
 
 const backupKeys: Record<Network, string> = {
   [Network.TESTNET]: "aptoslabs_aXLqtBTfEYA_BirLiL7RrdDfhY3SUStVrkxbpbWwGvRHV",
-  [Network.MAINNET]: "aptoslabs_aXLqtBTfEYA_BirLiL7RrdDfhY3SUStVrkxbpbWwGvRHV",
+  [Network.MAINNET]: "aptoslabs_EvEyBavu4Vd_DGBMbzktvZ61VchxWvscDsoNG849HXm8g",
   [Network.DEVNET]: "aptoslabs_aXLqtBTfEYA_BirLiL7RrdDfhY3SUStVrkxbpbWwGvRHV",
   [Network.LOCAL]: "aptoslabs_aXLqtBTfEYA_BirLiL7RrdDfhY3SUStVrkxbpbWwGvRHV",
   [Network.CUSTOM]: "aptoslabs_aXLqtBTfEYA_BirLiL7RrdDfhY3SUStVrkxbpbWwGvRHV",
@@ -49,6 +49,10 @@ const backupKeys: Record<Network, string> = {
 export const createAptosClient = (network: Network = Network.DEVNET) => {
   const apiKey =
     process.env[`NEXT_PUBLIC_APTOS_API_KEY_${network}`] ?? backupKeys[network];
+  console.log({
+    apiKey,
+    network,
+  });
   const config = new AptosConfig({
     network,
     clientConfig: {
