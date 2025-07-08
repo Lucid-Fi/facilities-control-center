@@ -53,10 +53,10 @@ function TokenExchangeContent() {
     // Adjust for ZVT's 8 decimals vs USDT's 6 decimals
     const adjustedDecimalPlaces =
       decimalPlaces + (ZVT_DECIMALS - USDT_DECIMALS);
-    const denominator = BigInt(10) ** BigInt(adjustedDecimalPlaces);
+    const denominator = BigInt(10) ** BigInt(decimalPlaces);
     const numerator =
-      BigInt(whole + (decimal || "0")) *
-      BigInt(10) ** BigInt(ZVT_DECIMALS - USDT_DECIMALS);
+      BigInt(whole) * BigInt(10) ** BigInt(adjustedDecimalPlaces) +
+      BigInt(parseInt(decimal || "0") * 10 ** adjustedDecimalPlaces);
 
     return [numerator, denominator];
   };
@@ -75,7 +75,7 @@ function TokenExchangeContent() {
         USDT_DECIMALS
       )} USDT Interest using rate ${conversionRate}`,
       moduleAddress: moduleAddress,
-      moduleName: "roda_test_harness",
+      moduleName: "basic_facility_harness",
       functionName: "exchange_tokens_by_rate",
       args: [
         facilityAddress,
