@@ -25,36 +25,38 @@ function Calendar({
   classNames,
   showOutsideDays = true,
   mode,
+  selected,
+  onSelect,
   ...props
 }: CalendarProps) {
   const [internalMonth, setInternalMonth] = React.useState<Date | undefined>(props.defaultMonth || new Date());
-  
+
   const handleMonthChange: MonthChangeEventHandler = (month: Date) => {
     setInternalMonth(month);
-    if (mode === "month" && props.onSelect) {
+    if (mode === "month" && onSelect) {
       // When in month mode, selecting a month means selecting the first day of the month
       const firstDayOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
-      props.onSelect(firstDayOfMonth);
+      onSelect(firstDayOfMonth);
     }
   };
-  
+
   const renderMonthContent = (month: Date) => {
     if (mode !== "month") return undefined;
-    
+
     return (
       <div
         className={cn(
           "w-full h-full flex items-center justify-center p-2 cursor-pointer rounded-md hover:bg-accent",
-          internalMonth && 
-          internalMonth.getMonth() === month.getMonth() && 
-          internalMonth.getFullYear() === month.getFullYear() && 
+          internalMonth &&
+          internalMonth.getMonth() === month.getMonth() &&
+          internalMonth.getFullYear() === month.getFullYear() &&
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
         )}
         onClick={(e) => {
           e.stopPropagation();
-          if (props.onSelect) {
+          if (onSelect) {
             const firstDayOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
-            props.onSelect(firstDayOfMonth);
+            onSelect(firstDayOfMonth);
           }
         }}
       >
@@ -63,8 +65,15 @@ function Calendar({
     );
   };
 
+  // Build the DayPicker mode prop (exclude custom "month" mode which is handled separately)
+  const dayPickerMode = mode === "month" ? undefined : mode;
+
   return (
     <DayPicker
+      mode={dayPickerMode}
+      selected={selected}
+      // @ts-expect-error - onSelect type varies by mode (discriminated union), but runtime behavior is correct
+      onSelect={onSelect}
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
@@ -118,11 +127,11 @@ function Calendar({
         ),
       }}
       onMonthChange={handleMonthChange}
-      {...(mode === "month" ? { 
+      {...(mode === "month" ? {
         hideHead: true,
-        formatters: { 
+        formatters: {
           formatMonthCaption: (date: Date) => date.toLocaleDateString(undefined, { year: 'numeric' }),
-          formatWeekdayName: () => "" 
+          formatWeekdayName: () => ""
         },
         renderDay: () => <></>,
         renderMonth: (month: Date) => renderMonthContent(month)

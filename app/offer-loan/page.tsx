@@ -26,6 +26,7 @@ import {
 import { DateTimeInput } from "@/components/date-time-input";
 import { TokenAmountInput } from "@/components/token-amount-input";
 import { ConfigPrompt } from "@/components/config-prompt";
+import { useLoanBookConfig } from "@/lib/hooks/use-loan-book-config";
 
 const TOKEN_DECIMALS = 8;
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -58,9 +59,7 @@ const paymentOrderOptions = [
 function OfferLoanContent() {
   const searchParams = useSearchParams();
 
-  const [moduleAddress, setModuleAddress] = useState<string>("");
   const [loanBookAddress, setLoanBookAddress] = useState<string>("");
-
   const [seed, setSeed] = useState<string>("");
   const [borrowerAddress, setBorrowerAddress] = useState<string>("");
   const [paymentSchedule, setPaymentSchedule] = useState<PaymentInterval[]>([]);
@@ -70,11 +69,16 @@ function OfferLoanContent() {
 
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch the loan book config (owner and module address derived from loan book)
+  const {
+    loanBookConfig,
+    isLoading: isLoadingConfig,
+    error: configError,
+  } = useLoanBookConfig({ loanBookAddress: loanBookAddress || undefined });
+
   useEffect(() => {
-    const moduleParam = searchParams.get("module") || "0x1"; // Default to 0x1 or actual deployed
     const loanBookParam = searchParams.get("loan_book");
 
-    setModuleAddress(moduleParam);
     if (loanBookParam) {
       setLoanBookAddress(loanBookParam);
     }
@@ -133,9 +137,9 @@ function OfferLoanContent() {
   };
 
   const transactionArgs = () => {
-    if (!loanBookAddress) return [];
+    if (!loanBookConfig?.configAddress) return [];
     return [
-      loanBookAddress,
+      loanBookConfig.configAddress,
       stringToHexBytes(seed),
       borrowerAddress,
       paymentSchedule.map((p) => p.time_due_us.toString()),
@@ -153,7 +157,7 @@ function OfferLoanContent() {
     {
       title: "Offer Loan",
       description: `Offer a new loan with seed: ${seed}`,
-      moduleAddress: moduleAddress,
+      moduleAddress: loanBookConfig?.moduleAddress || "",
       moduleName: "hybrid_loan_book",
       functionName: "offer_loan_simple",
       args: transactionArgs(),
@@ -178,6 +182,28 @@ function OfferLoanContent() {
     );
   }
 
+  if (isLoadingConfig) {
+    return <div>Loading loan book configuration...</div>;
+  }
+
+  if (configError) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error Loading Loan Book</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Failed to fetch loan book configuration: {configError.message}</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Loan Book Address: {loanBookAddress}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 space-y-8">
       <div className="flex items-center justify-between">
@@ -185,8 +211,26 @@ function OfferLoanContent() {
         <WalletSelector />
       </div>
 
-      {/* TODO: Add LoanBookOverview component here */}
-      {/* <LoanBookOverview loanBookAddress={loanBookAddress} moduleAddress={moduleAddress} /> */}
+      {/* Loan Book Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Loan Book Info</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm">
+          <div className="flex gap-2">
+            <span className="text-muted-foreground">Loan Book:</span>
+            <code className="text-xs bg-muted px-1 rounded">{loanBookAddress}</code>
+          </div>
+          <div className="flex gap-2">
+            <span className="text-muted-foreground">Config Address (Owner):</span>
+            <code className="text-xs bg-muted px-1 rounded">{loanBookConfig?.configAddress}</code>
+          </div>
+          <div className="flex gap-2">
+            <span className="text-muted-foreground">Module Address:</span>
+            <code className="text-xs bg-muted px-1 rounded">{loanBookConfig?.moduleAddress}</code>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
