@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect } from "react";
 import { Sidebar } from "@/components/sidebar";
+import { CommandPalette } from "@/components/command-palette";
 import { NavigationProvider, useNavigation } from "@/lib/navigation-context";
 
 function AppShellContent({ children }: { children: ReactNode }) {
@@ -25,6 +26,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-background">
       <Sidebar />
       <main className="flex-1 overflow-auto">{children}</main>
+      <CommandPalette />
     </div>
   );
 }
