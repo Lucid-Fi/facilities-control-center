@@ -10,6 +10,7 @@ import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
 import { toast } from "sonner";
 import { TokenAmountInput } from "@/components/token-amount-input";
 import { UserRoleDisplay } from "@/components/user-role-display";
+import { ConfigPrompt } from "@/components/config-prompt";
 
 function FundingRequestsContent() {
   const searchParams = useSearchParams();
@@ -87,7 +88,10 @@ function FundingRequestsContent() {
 
   if (!facilityAddress) {
     return (
-      <div>Please provide a facility address in the URL query parameters.</div>
+      <ConfigPrompt
+        missingFields={["facility"]}
+        pageTitle="Funding Requests"
+      />
     );
   }
 

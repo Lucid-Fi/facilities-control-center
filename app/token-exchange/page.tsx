@@ -9,6 +9,7 @@ import { WalletSelector } from "@/components/wallet-selector";
 import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
 import { toast } from "sonner";
 import { UserRoleDisplay } from "@/components/user-role-display";
+import { ConfigPrompt } from "@/components/config-prompt";
 
 // Constants for decimal places
 const ZVT_DECIMALS = 8;
@@ -64,6 +65,8 @@ function TokenExchangeContent() {
   const [rateNumerator, rateDenominator] =
     getConversionRateParts(conversionRate);
 
+  console.log({ rateNumerator, rateDenominator, amountTarget });
+
   const steps = [
     {
       title: "Exchange Tokens",
@@ -93,7 +96,10 @@ function TokenExchangeContent() {
 
   if (!facilityAddress) {
     return (
-      <div>Please provide a facility address in the URL query parameters.</div>
+      <ConfigPrompt
+        missingFields={["facility"]}
+        pageTitle="Token Exchange"
+      />
     );
   }
 

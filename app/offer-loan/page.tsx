@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { DateTimeInput } from "@/components/date-time-input";
 import { TokenAmountInput } from "@/components/token-amount-input";
+import { ConfigPrompt } from "@/components/config-prompt";
 
 const TOKEN_DECIMALS = 8;
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -165,10 +166,15 @@ function OfferLoanContent() {
 
   if (!loanBookAddress) {
     return (
-      <div>
-        Please provide a <code>loan_book</code> address in the URL query
-        parameters.
-      </div>
+      <ConfigPrompt
+        missingFields={["loan_book"]}
+        pageTitle="Offer Loan"
+        onConfigured={(values) => {
+          if (values.loan_book) {
+            setLoanBookAddress(values.loan_book);
+          }
+        }}
+      />
     );
   }
 

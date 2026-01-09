@@ -10,6 +10,7 @@ import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
 import { toast } from "sonner";
 import { UserRoleDisplay } from "@/components/user-role-display";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { ConfigPrompt } from "@/components/config-prompt";
 
 const USDT_DECIMALS = 6;
 
@@ -67,7 +68,10 @@ function FacilityUpsizeContent() {
 
   if (!facilityAddress) {
     return (
-      <div>Please provide a facility address in the URL query parameters.</div>
+      <ConfigPrompt
+        missingFields={["facility"]}
+        pageTitle="Facility Upsizing"
+      />
     );
   }
 

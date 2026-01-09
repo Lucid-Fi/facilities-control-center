@@ -18,6 +18,7 @@ import { calculateEffectiveAdvanceRateString } from "@/lib/utils/simulationCalcu
 import { TokenAmountInput } from "@/components/token-amount-input";
 import { UserRoleDisplay } from "@/components/user-role-display";
 import { useFacilityInfo } from "@/lib/hooks/use-facility-data";
+import { ConfigPrompt } from "@/components/config-prompt";
 
 function WaterfallContent() {
   const searchParams = useSearchParams();
@@ -234,7 +235,10 @@ function WaterfallContent() {
 
   if (!facilityAddress) {
     return (
-      <div>Please provide a facility address in the URL query parameters.</div>
+      <ConfigPrompt
+        missingFields={["facility"]}
+        pageTitle="Waterfall Management"
+      />
     );
   }
 

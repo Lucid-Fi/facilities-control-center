@@ -17,6 +17,7 @@ import { useFacilityInfo } from "@/lib/hooks/use-facility-data";
 import { Badge } from "@/components/ui/badge";
 import { TokenAmountInput } from "@/components/token-amount-input";
 import { UserRoleDisplay } from "@/components/user-role-display";
+import { ConfigPrompt } from "@/components/config-prompt";
 
 // Removed local interface definitions
 
@@ -204,7 +205,10 @@ function CapitalCallContent() {
 
   if (!facilityAddress) {
     return (
-      <div>Please provide a facility address in the URL query parameters.</div>
+      <ConfigPrompt
+        missingFields={["facility"]}
+        pageTitle="Capital Call & Recycle"
+      />
     );
   }
 

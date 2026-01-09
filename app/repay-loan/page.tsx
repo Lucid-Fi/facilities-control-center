@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TokenAmountInput } from "@/components/token-amount-input";
 import { LoanOverview } from "@/components/loan-overview"; // Assuming this path is correct
+import { ConfigPrompt } from "@/components/config-prompt";
 
 const TOKEN_DECIMALS = 8; // Standard for many tokens, adjust if necessary
 
@@ -86,10 +87,15 @@ function RepayLoanContent() {
 
   if (!moduleAddress) {
     return (
-      <div>
-        Please provide a <code>module</code> address in the URL query
-        parameters. Example: <code>?module=0x123...</code>
-      </div>
+      <ConfigPrompt
+        missingFields={["module"]}
+        pageTitle="Repay Loan"
+        onConfigured={(values) => {
+          if (values.module) {
+            setModuleAddress(values.module);
+          }
+        }}
+      />
     );
   }
 
