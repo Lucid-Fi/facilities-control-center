@@ -14,6 +14,7 @@ import { TransactionStatus as TransactionStatusComponent } from "./transaction-s
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useWallet } from "@/lib/use-wallet";
+import { useNavigation } from "@/lib/navigation-context";
 import { useMutation } from "@tanstack/react-query";
 import {
   EntryFunctionArgumentTypes,
@@ -24,11 +25,26 @@ import { SimulationResult, simulateTransaction } from "@/lib/aptos-service";
 export default function ContractInterface() {
   const searchParams = useSearchParams();
   const { submitTransaction, connected, account, network } = useWallet();
+  const {
+    facilityAddress: contextFacilityAddress,
+    moduleAddress: contextModuleAddress,
+    setFacilityAddress: setContextFacilityAddress,
+    setModuleAddress: setContextModuleAddress,
+  } = useNavigation();
 
-  const [moduleAddress, setModuleAddress] = useState<string>("0x1");
-  const [inputModuleAddress, setInputModuleAddress] = useState<string>("0x1");
-  const [facilityAddress, setFacilityAddress] = useState<string>("");
-  const [inputFacilityAddress, setInputFacilityAddress] = useState<string>("");
+  // Initialize from context, but allow URL to override
+  const [moduleAddress, setModuleAddress] = useState<string>(
+    contextModuleAddress || "0x1"
+  );
+  const [inputModuleAddress, setInputModuleAddress] = useState<string>(
+    contextModuleAddress || "0x1"
+  );
+  const [facilityAddress, setFacilityAddress] = useState<string>(
+    contextFacilityAddress || ""
+  );
+  const [inputFacilityAddress, setInputFacilityAddress] = useState<string>(
+    contextFacilityAddress || ""
+  );
   const [transactionStatus, setTransactionStatus] = useState<TransactionStatus>(
     {
       status: "idle",
@@ -171,6 +187,8 @@ export default function ContractInterface() {
   const updateFacilityAddress = () => {
     if (inputFacilityAddress) {
       setFacilityAddress(inputFacilityAddress);
+      // Sync with navigation context for sidebar/command palette
+      setContextFacilityAddress(inputFacilityAddress);
 
       // Update URL with the new facility address
       const params = new URLSearchParams(window.location.search);
@@ -183,6 +201,8 @@ export default function ContractInterface() {
   const updateModuleAddress = () => {
     if (inputModuleAddress) {
       setModuleAddress(inputModuleAddress);
+      // Sync with navigation context for sidebar/command palette
+      setContextModuleAddress(inputModuleAddress);
 
       // Update URL with the new module address
       const params = new URLSearchParams(window.location.search);
