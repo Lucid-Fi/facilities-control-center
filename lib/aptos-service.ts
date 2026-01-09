@@ -49,10 +49,6 @@ const backupKeys: Record<Network, string> = {
 export const createAptosClient = (network: Network = Network.DEVNET) => {
   const apiKey =
     process.env[`NEXT_PUBLIC_APTOS_API_KEY_${network}`] ?? backupKeys[network];
-  console.log({
-    apiKey,
-    network,
-  });
   const config = new AptosConfig({
     network,
     clientConfig: {
@@ -97,13 +93,12 @@ export const simulateTransaction = async (
       args
     );
     const transaction = await client.transaction.build.simple({
-      sender: account.address,
+      sender: account.address.toString(),
       data: payload,
     });
 
     const response: UserTransactionResponse[] =
       await client.transaction.simulate.simple({
-        signerPublicKey: account.publicKey,
         transaction,
       });
 
