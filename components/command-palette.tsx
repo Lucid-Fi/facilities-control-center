@@ -18,6 +18,7 @@ import {
   Command,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigation } from "@/lib/navigation-context";
 import {
   Dialog,
   DialogContent,
@@ -176,6 +177,7 @@ export function CommandPalette() {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
+  const { buildNavUrl } = useNavigation();
 
   // Filter commands based on query
   const filteredCommands = useMemo(() => {
@@ -227,12 +229,12 @@ export function CommandPalette() {
       setOpen(false);
       setQuery("");
       if (item.href) {
-        router.push(item.href);
+        router.push(buildNavUrl(item.href));
       } else if (item.action) {
         item.action();
       }
     },
-    [router]
+    [router, buildNavUrl]
   );
 
   // Handle keyboard navigation

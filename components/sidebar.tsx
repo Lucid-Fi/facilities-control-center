@@ -133,10 +133,11 @@ function NavItemLink({
   collapsed: boolean;
 }) {
   const Icon = item.icon;
+  const { buildNavUrl } = useNavigation();
 
   const linkContent = (
     <Link
-      href={item.href}
+      href={buildNavUrl(item.href)}
       className={cn(
         "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
