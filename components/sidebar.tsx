@@ -17,6 +17,7 @@ import {
   Database,
   Building2,
   ChevronDown,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigation } from "@/lib/navigation-context";
@@ -247,7 +248,11 @@ function NavGroupComponent({
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { sidebarCollapsed, toggleSidebar, facilityAddress } = useNavigation();
+  const { sidebarCollapsed, toggleSidebar, facilityAddress, network, setNetwork } = useNavigation();
+
+  const handleNetworkToggle = () => {
+    setNetwork(network === "mainnet" ? "testnet" : "mainnet");
+  };
 
   return (
     <TooltipProvider>
@@ -284,6 +289,70 @@ export function Sidebar() {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* Network Toggle */}
+        <div
+          className={cn(
+            "px-3 py-2 border-b border-sidebar-border",
+            sidebarCollapsed && "px-2"
+          )}
+        >
+          {sidebarCollapsed ? (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleNetworkToggle}
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors",
+                    network === "mainnet"
+                      ? "bg-green-500/20 text-green-500"
+                      : "bg-yellow-500/20 text-yellow-500"
+                  )}
+                >
+                  <Globe className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium capitalize">{network}</span>
+                  <span className="text-xs text-muted-foreground">
+                    Click to switch network
+                  </span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={handleNetworkToggle}
+              className="flex items-center gap-2 w-full group"
+            >
+              <div
+                className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors w-full",
+                  "hover:bg-sidebar-accent"
+                )}
+              >
+                <Globe
+                  className={cn(
+                    "h-4 w-4",
+                    network === "mainnet" ? "text-green-500" : "text-yellow-500"
+                  )}
+                />
+                <span className="text-sm flex-1 text-left">Network</span>
+                <span
+                  className={cn(
+                    "text-xs px-2 py-0.5 rounded-full font-medium",
+                    network === "mainnet"
+                      ? "bg-green-500/20 text-green-500"
+                      : "bg-yellow-500/20 text-yellow-500"
+                  )}
+                >
+                  {network === "mainnet" ? "Mainnet" : "Testnet"}
+                </span>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Facility Address Display */}

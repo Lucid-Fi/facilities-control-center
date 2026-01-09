@@ -9,13 +9,17 @@ import {
   useCallback,
 } from "react";
 
+export type NetworkType = "mainnet" | "testnet";
+
 interface NavigationContextType {
   facilityAddress: string;
   moduleAddress: string;
   loanBookAddress: string;
+  network: NetworkType;
   setFacilityAddress: (address: string) => void;
   setModuleAddress: (address: string) => void;
   setLoanBookAddress: (address: string) => void;
+  setNetwork: (network: NetworkType) => void;
   sidebarCollapsed: boolean;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
@@ -30,6 +34,7 @@ const STORAGE_KEYS = {
   FACILITY_ADDRESS: "facility-control-center:facility-address",
   MODULE_ADDRESS: "facility-control-center:module-address",
   LOAN_BOOK_ADDRESS: "facility-control-center:loan-book-address",
+  NETWORK: "facility-control-center:network",
   SIDEBAR_COLLAPSED: "facility-control-center:sidebar-collapsed",
 };
 
@@ -52,6 +57,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const [facilityAddress, setFacilityAddressState] = useState("");
   const [moduleAddress, setModuleAddressState] = useState("");
   const [loanBookAddress, setLoanBookAddressState] = useState("");
+  const [network, setNetworkState] = useState<NetworkType>("mainnet");
   const [sidebarCollapsed, setSidebarCollapsedState] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -60,11 +66,15 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     const storedFacility = localStorage.getItem(STORAGE_KEYS.FACILITY_ADDRESS);
     const storedModule = localStorage.getItem(STORAGE_KEYS.MODULE_ADDRESS);
     const storedLoanBook = localStorage.getItem(STORAGE_KEYS.LOAN_BOOK_ADDRESS);
+    const storedNetwork = localStorage.getItem(STORAGE_KEYS.NETWORK);
     const storedCollapsed = localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED);
 
     if (storedFacility) setFacilityAddressState(storedFacility);
     if (storedModule) setModuleAddressState(storedModule);
     if (storedLoanBook) setLoanBookAddressState(storedLoanBook);
+    if (storedNetwork === "testnet" || storedNetwork === "mainnet") {
+      setNetworkState(storedNetwork);
+    }
     if (storedCollapsed) setSidebarCollapsedState(storedCollapsed === "true");
 
     setIsHydrated(true);
@@ -83,6 +93,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const setLoanBookAddress = useCallback((address: string) => {
     setLoanBookAddressState(address);
     localStorage.setItem(STORAGE_KEYS.LOAN_BOOK_ADDRESS, address);
+  }, []);
+
+  const setNetwork = useCallback((newNetwork: NetworkType) => {
+    setNetworkState(newNetwork);
+    localStorage.setItem(STORAGE_KEYS.NETWORK, newNetwork);
   }, []);
 
   const setSidebarCollapsed = useCallback((collapsed: boolean) => {
@@ -142,9 +157,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         facilityAddress,
         moduleAddress,
         loanBookAddress,
+        network,
         setFacilityAddress,
         setModuleAddress,
         setLoanBookAddress,
+        setNetwork,
         sidebarCollapsed,
         setSidebarCollapsed,
         toggleSidebar,
