@@ -65,8 +65,6 @@ function TokenExchangeContent() {
   const [rateNumerator, rateDenominator] =
     getConversionRateParts(conversionRate);
 
-  console.log({ rateNumerator, rateDenominator, amountTarget });
-
   const steps = [
     {
       title: "Exchange Tokens",

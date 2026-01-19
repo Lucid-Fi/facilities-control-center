@@ -40,6 +40,7 @@ interface TransactionStep {
   moduleName: string;
   functionName: string;
   args: EntryFunctionArgumentTypes[];
+  typeArguments?: string[];
 }
 
 interface AddressBook {
@@ -89,7 +90,8 @@ export function TransactionStepper({
         `${step.moduleName}::${step.functionName}`,
         step.moduleAddress,
         step.args,
-        network?.name
+        network?.name,
+        step.typeArguments ?? []
       );
 
       setSimulationResult(result);
@@ -117,7 +119,7 @@ export function TransactionStepper({
             await builder.addBatchedCalls({
               function: `${step.moduleAddress}::${step.moduleName}::${step.functionName}`,
               functionArguments: [CallArgument.newSigner(0), ...step.args],
-              typeArguments: [],
+              typeArguments: step.typeArguments ?? [],
             });
           }
           return builder;
@@ -184,7 +186,7 @@ export function TransactionStepper({
               await builder.addBatchedCalls({
                 function: `${step.moduleAddress}::${step.moduleName}::${step.functionName}`,
                 functionArguments: [CallArgument.newSigner(0), ...step.args],
-                typeArguments: [],
+                typeArguments: step.typeArguments ?? [],
               });
             }
             return builder;
@@ -211,7 +213,7 @@ export function TransactionStepper({
         const payload: InputEntryFunctionData = {
           function:
             `${step.moduleAddress}::${step.moduleName}::${step.functionName}` as const,
-          typeArguments: [],
+          typeArguments: step.typeArguments ?? [],
           functionArguments: step.args,
         };
 

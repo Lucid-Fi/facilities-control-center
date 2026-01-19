@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { createAptosClient } from "../aptos-service";
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { useEffectiveNetwork } from "./use-effective-network";
 
 interface UseLoanBookConfigProps {
   loanBookAddress?: string;
@@ -21,20 +21,17 @@ export interface LoanBookConfig {
  * - moduleAddress: the deployed module address (from resource type like "0x123::loan_book::X")
  */
 export const useLoanBookConfig = ({ loanBookAddress }: UseLoanBookConfigProps) => {
-  const { network } = useWallet();
+  const network = useEffectiveNetwork();
 
   const {
     data: loanBookConfig,
     isLoading,
     error,
   } = useQuery<LoanBookConfig, Error>({
-    queryKey: ["loanBookConfig", loanBookAddress, network?.chainId],
+    queryKey: ["loanBookConfig", loanBookAddress, network.chainId],
     queryFn: async (): Promise<LoanBookConfig> => {
       if (!loanBookAddress) {
         throw new Error("Loan book address is required");
-      }
-      if (!network?.name) {
-        throw new Error("Network is required");
       }
 
       const client = createAptosClient(network.name);
@@ -82,7 +79,7 @@ export const useLoanBookConfig = ({ loanBookAddress }: UseLoanBookConfigProps) =
         moduleAddress,
       };
     },
-    enabled: !!loanBookAddress && !!network?.name,
+    enabled: !!loanBookAddress,
     staleTime: 60000, // Config address doesn't change often
   });
 

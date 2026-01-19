@@ -83,14 +83,16 @@ export const simulateTransaction = async (
   functionName: string,
   moduleAddress: string,
   args: unknown[],
-  network: Network = Network.DEVNET
+  network: Network = Network.DEVNET,
+  typeArguments: string[] = []
 ): Promise<SimulationResult> => {
   try {
     const client = createAptosClient(network);
     const payload: InputEntryFunctionData = createEntryFunctionPayload(
       moduleAddress,
       functionName,
-      args
+      args,
+      typeArguments
     );
     const transaction = await client.transaction.build.simple({
       sender: account.address.toString(),
@@ -143,11 +145,12 @@ export const simulateTransaction = async (
 export const createEntryFunctionPayload = (
   moduleAddress: string,
   functionName: string,
-  args: unknown[]
+  args: unknown[],
+  typeArguments: string[] = []
 ) => {
   return {
     function: `${moduleAddress}::${functionName}` as MoveFunctionId,
-    typeArguments: [],
+    typeArguments,
     functionArguments: args,
   } as InputEntryFunctionData;
 };

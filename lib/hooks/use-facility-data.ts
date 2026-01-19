@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery } from "@tanstack/react-query";
 import { createAptosClient } from "../aptos-service";
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { useEffectiveNetwork } from "./use-effective-network";
 
 export interface FacilityData {
   fundingRequestId?: string;
@@ -29,14 +29,13 @@ export interface FacilityData {
 interface UseFacilityInfoProps {
   facilityAddress?: string;
   moduleAddress?: string;
-  network?: { chainId?: string | number }; // Adjust according to your network object structure
 }
 
 export const useFacilityInfo = ({
   facilityAddress,
   moduleAddress,
 }: UseFacilityInfoProps) => {
-  const { network } = useWallet();
+  const network = useEffectiveNetwork();
   const {
     data: facilityData,
     isLoading,
@@ -46,7 +45,7 @@ export const useFacilityInfo = ({
       "facilityData",
       facilityAddress,
       moduleAddress,
-      network?.chainId,
+      network.chainId,
     ],
     queryFn: async (): Promise<FacilityData> => {
       if (!facilityAddress) {
@@ -54,9 +53,6 @@ export const useFacilityInfo = ({
       }
       if (!moduleAddress) {
         throw new Error("Module address is required");
-      }
-      if (!network) {
-        throw new Error("Network is required");
       }
 
       const client = createAptosClient(network.name);
@@ -433,7 +429,7 @@ export const useFacilityInfo = ({
         return errorReturn;
       }
     },
-    enabled: !!facilityAddress && !!moduleAddress && !!network,
+    enabled: !!facilityAddress && !!moduleAddress,
     refetchInterval: 30000,
     staleTime: 15000,
   });

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useQuery } from "@tanstack/react-query";
 import { createAptosClient } from "../aptos-service";
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { useEffectiveNetwork } from "./use-effective-network";
 import { Aptos } from "@aptos-labs/ts-sdk";
 
 // Define the structure for a single payment interval
@@ -84,22 +84,19 @@ export const useLoanInfo = ({
   loanAddress,
   moduleAddress,
 }: UseLoanInfoProps) => {
-  const { network } = useWallet();
+  const network = useEffectiveNetwork();
   const {
     data: loanData,
     isLoading,
     error,
   } = useQuery<LoanData, Error>({
-    queryKey: ["loanData", loanAddress, moduleAddress, network?.chainId],
+    queryKey: ["loanData", loanAddress, moduleAddress, network.chainId],
     queryFn: async (): Promise<LoanData> => {
       if (!loanAddress) {
         throw new Error("Loan address is required");
       }
       if (!moduleAddress) {
         throw new Error("Module address is required");
-      }
-      if (!network?.name) {
-        throw new Error("Network is required");
       }
 
       const client = createAptosClient(network.name);
@@ -389,7 +386,7 @@ export const useLoanInfo = ({
         return errorReturn;
       }
     },
-    enabled: !!loanAddress && !!moduleAddress && !!network?.name,
+    enabled: !!loanAddress && !!moduleAddress,
     refetchInterval: 30000, // Consider adjusting based on how frequently loan data changes
     staleTime: 15000, // Consider adjusting
   });

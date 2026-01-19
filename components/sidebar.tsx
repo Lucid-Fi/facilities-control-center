@@ -18,9 +18,11 @@ import {
   Building2,
   ChevronDown,
   Globe,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNavigation } from "@/lib/navigation-context";
+import { useNavigation, NetworkType } from "@/lib/navigation-context";
+import { useWallet } from "@/lib/use-wallet";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -102,6 +104,12 @@ const navigationGroups: NavGroup[] = [
         href: "/token-exchange",
         icon: ArrowLeftRight,
         description: "Exchange tokens",
+      },
+      {
+        label: "Bulk Transfer",
+        href: "/bulk-transfer",
+        icon: Send,
+        description: "Transfer tokens to multiple addresses",
       },
       {
         label: "Facility Upsize",
@@ -249,8 +257,16 @@ function NavGroupComponent({
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarCollapsed, toggleSidebar, facilityAddress, network, setNetwork } = useNavigation();
+  const { connected, network: walletNetwork } = useWallet();
+
+  // When wallet is connected, show wallet's network; otherwise show toggled network
+  const displayNetwork: NetworkType = connected && walletNetwork
+    ? (walletNetwork.name?.toLowerCase() as NetworkType) ?? "mainnet"
+    : network;
+  const canToggle = !connected;
 
   const handleNetworkToggle = () => {
+    if (!canToggle) return;
     setNetwork(network === "mainnet" ? "testnet" : "mainnet");
   };
 
@@ -303,11 +319,13 @@ export function Sidebar() {
               <TooltipTrigger asChild>
                 <button
                   onClick={handleNetworkToggle}
+                  disabled={!canToggle}
                   className={cn(
                     "w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-colors",
-                    network === "mainnet"
+                    displayNetwork === "mainnet"
                       ? "bg-green-500/20 text-green-500"
-                      : "bg-yellow-500/20 text-yellow-500"
+                      : "bg-yellow-500/20 text-yellow-500",
+                    !canToggle && "cursor-default"
                   )}
                 >
                   <Globe className="h-4 w-4" />
@@ -315,43 +333,56 @@ export function Sidebar() {
               </TooltipTrigger>
               <TooltipContent side="right">
                 <div className="flex flex-col gap-1">
-                  <span className="font-medium capitalize">{network}</span>
+                  <span className="font-medium capitalize">{displayNetwork}</span>
                   <span className="text-xs text-muted-foreground">
-                    Click to switch network
+                    {canToggle ? "Click to switch network" : "Set by connected wallet"}
                   </span>
                 </div>
               </TooltipContent>
             </Tooltip>
           ) : (
-            <button
-              onClick={handleNetworkToggle}
-              className="flex items-center gap-2 w-full group"
-            >
-              <div
-                className={cn(
-                  "flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors w-full",
-                  "hover:bg-sidebar-accent"
-                )}
-              >
-                <Globe
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleNetworkToggle}
+                  disabled={!canToggle}
                   className={cn(
-                    "h-4 w-4",
-                    network === "mainnet" ? "text-green-500" : "text-yellow-500"
-                  )}
-                />
-                <span className="text-sm flex-1 text-left">Network</span>
-                <span
-                  className={cn(
-                    "text-xs px-2 py-0.5 rounded-full font-medium",
-                    network === "mainnet"
-                      ? "bg-green-500/20 text-green-500"
-                      : "bg-yellow-500/20 text-yellow-500"
+                    "flex items-center gap-2 w-full group",
+                    !canToggle && "cursor-default"
                   )}
                 >
-                  {network === "mainnet" ? "Mainnet" : "Testnet"}
-                </span>
-              </div>
-            </button>
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors w-full",
+                      canToggle && "hover:bg-sidebar-accent"
+                    )}
+                  >
+                    <Globe
+                      className={cn(
+                        "h-4 w-4",
+                        displayNetwork === "mainnet" ? "text-green-500" : "text-yellow-500"
+                      )}
+                    />
+                    <span className="text-sm flex-1 text-left">Network</span>
+                    <span
+                      className={cn(
+                        "text-xs px-2 py-0.5 rounded-full font-medium",
+                        displayNetwork === "mainnet"
+                          ? "bg-green-500/20 text-green-500"
+                          : "bg-yellow-500/20 text-yellow-500"
+                      )}
+                    >
+                      {displayNetwork === "mainnet" ? "Mainnet" : "Testnet"}
+                    </span>
+                  </div>
+                </button>
+              </TooltipTrigger>
+              {!canToggle && (
+                <TooltipContent side="right">
+                  <span className="text-xs">Set by connected wallet</span>
+                </TooltipContent>
+              )}
+            </Tooltip>
           )}
         </div>
 
