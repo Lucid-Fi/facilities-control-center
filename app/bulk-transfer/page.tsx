@@ -102,18 +102,14 @@ function BulkTransferContent() {
         moduleAddress: BULK_TRANSFER_MODULE,
         moduleName: "bulk_transfers",
         functionName: "simple_bulk_transfer",
-        typeArguments: [],
-        args: [tokenAddress, validAddresses, rawAmount.toString()],
+        typeArguments: [] as string[],
+        args: [
+          tokenAddress,
+          validAddresses,
+          rawAmount.toString(),
+        ] as unknown as EntryFunctionArgumentTypes[],
       },
-    ] as {
-      title: string;
-      description: string;
-      moduleAddress: string;
-      moduleName: string;
-      functionName: string;
-      typeArguments: string[];
-      args: EntryFunctionArgumentTypes[];
-    }[];
+    ];
   }, [tokenMetadata, validAddresses, rawAmount, tokenAddress]);
 
   const totalAmount = useMemo(() => {
