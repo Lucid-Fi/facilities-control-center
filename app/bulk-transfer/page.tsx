@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { TransactionStepper } from "@/components/transaction-stepper";
 import { parseTokenAmount, formatTokenAmount } from "@/lib/utils/token";
 import { WalletSelector } from "@/components/wallet-selector";
-import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
+import { EntryFunctionArgumentTypes, Network } from "@aptos-labs/ts-sdk";
 import { toast } from "sonner";
 import { UserRoleDisplay } from "@/components/user-role-display";
 import { createAptosClient } from "@/lib/aptos-service";
@@ -87,6 +87,8 @@ function BulkTransferContent() {
     return () => clearTimeout(debounceTimer);
   }, [tokenAddress, network.name]);
 
+  const isMainnet = network.name === Network.MAINNET;
+
   const steps = useMemo(() => {
     if (!tokenMetadata || validAddresses.length === 0 || rawAmount === BigInt(0)) {
       return [];
@@ -98,14 +100,20 @@ function BulkTransferContent() {
       moduleAddress: "0x1",
       moduleName: "primary_fungible_store",
       functionName: "transfer",
-      typeArguments: ["0x1::fungible_asset::Metadata"],
-      args: [
-        tokenAddress,
-        recipient,
-        rawAmount.toString(),
-      ] as unknown as EntryFunctionArgumentTypes[],
-    }));
-  }, [tokenMetadata, validAddresses, rawAmount, tokenAddress]);
+      typeArguments: isMainnet ? [] : ["0x1::fungible_asset::Metadata"],
+      args: isMainnet
+        ? [recipient, rawAmount.toString()]
+        : [tokenAddress, recipient, rawAmount.toString()],
+    })) as {
+      title: string;
+      description: string;
+      moduleAddress: string;
+      moduleName: string;
+      functionName: string;
+      typeArguments: string[];
+      args: EntryFunctionArgumentTypes[];
+    }[];
+  }, [tokenMetadata, validAddresses, rawAmount, tokenAddress, isMainnet]);
 
   const totalAmount = useMemo(() => {
     if (!tokenMetadata || validAddresses.length === 0 || rawAmount === BigInt(0)) {
@@ -250,6 +258,7 @@ function BulkTransferContent() {
       {steps.length > 0 && (
         <TransactionStepper
           steps={steps}
+          hideBatchMode={true}
           onComplete={() => {
             toast.success("Bulk Transfer Complete", {
               description: `Successfully transferred ${formatTokenAmount(

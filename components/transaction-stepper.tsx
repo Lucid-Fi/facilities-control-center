@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Stepper } from "@/components/ui/stepper";
@@ -57,6 +57,8 @@ interface TransactionStepperProps {
   hideBatchMode?: boolean;
 }
 
+const BATCH_SIZE = 5;
+
 export function TransactionStepper({
   steps,
   onComplete,
@@ -64,19 +66,33 @@ export function TransactionStepper({
   hideBatchMode = false,
 }: TransactionStepperProps) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
   const [isExecuting, setIsExecuting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [simulationResult, setSimulationResult] =
     useState<SimulationResult | null>(null);
   const [isBatchMode, setIsBatchMode] = useState(false);
+  const [isAutoExecute, setIsAutoExecute] = useState(false);
+  const pendingAutoExecuteRef = useRef(false);
+
+  const batches = useMemo(() => {
+    const result: typeof steps[] = [];
+    for (let i = 0; i < steps.length; i += BATCH_SIZE) {
+      result.push(steps.slice(i, i + BATCH_SIZE));
+    }
+    return result;
+  }, [steps]);
 
   const handleComplete = useCallback(() => {
     onComplete();
     setIsExecuting(false);
     setCurrentStep(steps.length);
+    setCurrentBatchIndex(0);
+    pendingAutoExecuteRef.current = false;
   }, [onComplete, steps.length]);
 
   const { account, submitTransaction, network } = useWallet();
+
 
   const handleStepClick = async (stepIndex: number) => {
     if (stepIndex !== currentStep || isExecuting) return;
@@ -95,7 +111,12 @@ export function TransactionStepper({
       );
 
       setSimulationResult(result);
-      setShowConfirmation(true);
+
+      if (isAutoExecute && result.success) {
+        await executeConfirmedTransaction();
+      } else {
+        setShowConfirmation(true);
+      }
     } catch (error) {
       console.error("Error simulating transaction:", error);
       toast.error("Simulation failed", {
@@ -109,13 +130,19 @@ export function TransactionStepper({
     if (!account) return;
     setIsExecuting(true);
 
+    const currentBatch = batches[currentBatchIndex];
+    if (!currentBatch || currentBatch.length === 0) {
+      setIsExecuting(false);
+      return;
+    }
+
     try {
       const client = createAptosClient(network?.name || Network.DEVNET);
 
       const transaction = await client.transaction.build.scriptComposer({
         sender: account.address,
         builder: async (builder) => {
-          for (const step of steps) {
+          for (const step of currentBatch) {
             await builder.addBatchedCalls({
               function: `${step.moduleAddress}::${step.moduleName}::${step.functionName}`,
               functionArguments: [CallArgument.newSigner(0), ...step.args],
@@ -161,7 +188,12 @@ export function TransactionStepper({
       };
 
       setSimulationResult(result);
-      setShowConfirmation(true);
+
+      if (isAutoExecute && result.success) {
+        await executeConfirmedTransaction();
+      } else {
+        setShowConfirmation(true);
+      }
     } catch (error) {
       console.error("Error simulating batch transaction:", error);
       toast.error("Batch simulation failed", {
@@ -171,18 +203,24 @@ export function TransactionStepper({
     }
   };
 
-  const handleConfirm = async () => {
+  const executeConfirmedTransaction = async () => {
     if (!account) return;
 
     try {
       let txnResult: { hash: string } | undefined;
       if (isBatchMode) {
+        const currentBatch = batches[currentBatchIndex];
+        if (!currentBatch || currentBatch.length === 0) {
+          handleComplete();
+          return;
+        }
+
         const client = createAptosClient(network?.name || Network.DEVNET);
 
         const transaction = await client.transaction.build.scriptComposer({
           sender: account.address,
           builder: async (builder) => {
-            for (const step of steps) {
+            for (const step of currentBatch) {
               await builder.addBatchedCalls({
                 function: `${step.moduleAddress}::${step.moduleName}::${step.functionName}`,
                 functionArguments: [CallArgument.newSigner(0), ...step.args],
@@ -207,7 +245,22 @@ export function TransactionStepper({
             max_gas_amount: 100000,
           }
         );
-        handleComplete();
+
+        const completedSteps = (currentBatchIndex + 1) * BATCH_SIZE;
+        setCurrentStep(Math.min(completedSteps, steps.length));
+
+        if (currentBatchIndex < batches.length - 1) {
+          if (isAutoExecute) pendingAutoExecuteRef.current = true;
+          setCurrentBatchIndex(currentBatchIndex + 1);
+          toast.success(
+            `Batch ${currentBatchIndex + 1}/${batches.length} complete`,
+            {
+              description: `${batches.length - currentBatchIndex - 1} batch(es) remaining`,
+            }
+          );
+        } else {
+          handleComplete();
+        }
       } else {
         const step = steps[currentStep];
         const payload: InputEntryFunctionData = {
@@ -224,6 +277,7 @@ export function TransactionStepper({
         if (currentStep === steps.length - 1) {
           handleComplete();
         } else {
+          if (isAutoExecute) pendingAutoExecuteRef.current = true;
           setCurrentStep(currentStep + 1);
         }
       }
@@ -244,11 +298,35 @@ export function TransactionStepper({
       toast.error("Transaction submission failed", {
         description: error instanceof Error ? error.message : "Unknown error",
       });
+      pendingAutoExecuteRef.current = false;
     } finally {
       setIsExecuting(false);
       setShowConfirmation(false);
     }
   };
+
+  const handleConfirm = async () => {
+    await executeConfirmedTransaction();
+  };
+
+  useEffect(() => {
+    if (!pendingAutoExecuteRef.current || !isAutoExecute) return;
+    if (currentStep >= steps.length) return;
+    if (isExecuting) return;
+
+    pendingAutoExecuteRef.current = false;
+
+    const timer = setTimeout(() => {
+      if (isBatchMode) {
+        handleBatchSimulation();
+      } else {
+        handleStepClick(currentStep);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, currentBatchIndex, isAutoExecute, isExecuting, steps.length, isBatchMode]);
 
   return (
     <Card>
@@ -256,14 +334,31 @@ export function TransactionStepper({
         <CardTitle>Transaction Steps</CardTitle>
       </CardHeader>
       <CardContent>
-        {steps.length > 1 && steps.length > currentStep && !hideBatchMode && (
-          <div className="flex items-center space-x-2 mb-4">
-            <Switch
-              id="batch-mode"
-              checked={isBatchMode}
-              onCheckedChange={setIsBatchMode}
-            />
-            <Label htmlFor="batch-mode">Batch Mode</Label>
+        {steps.length > 1 && steps.length > currentStep && (
+          <div className="flex flex-wrap items-center gap-4 mb-4">
+            {!hideBatchMode && (
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="batch-mode"
+                  checked={isBatchMode}
+                  onCheckedChange={(checked) => {
+                    setIsBatchMode(checked);
+                    setCurrentBatchIndex(0);
+                  }}
+                />
+                <Label htmlFor="batch-mode">
+                  Batch Mode{batches.length > 1 && ` (${batches.length} batches of up to ${BATCH_SIZE})`}
+                </Label>
+              </div>
+            )}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="auto-execute"
+                checked={isAutoExecute}
+                onCheckedChange={setIsAutoExecute}
+              />
+              <Label htmlFor="auto-execute">Auto Execute</Label>
+            </div>
           </div>
         )}
         <Stepper
@@ -292,7 +387,9 @@ export function TransactionStepper({
               {isExecuting
                 ? "Simulating..."
                 : isBatchMode
-                ? "Simulate Batch"
+                ? batches.length > 1
+                  ? `Simulate Batch ${currentBatchIndex + 1}/${batches.length}`
+                  : "Simulate Batch"
                 : currentStep === steps.length - 1
                 ? "Complete"
                 : "Execute Step"}
