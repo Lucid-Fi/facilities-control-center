@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { TransactionStepper } from "@/components/transaction-stepper";
 import { parseTokenAmount, formatTokenAmount } from "@/lib/utils/token";
 import { WalletSelector } from "@/components/wallet-selector";
-import { EntryFunctionArgumentTypes, Network } from "@aptos-labs/ts-sdk";
+import { EntryFunctionArgumentTypes } from "@aptos-labs/ts-sdk";
 import { toast } from "sonner";
 import { UserRoleDisplay } from "@/components/user-role-display";
 import { createAptosClient } from "@/lib/aptos-service";
@@ -13,6 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+
+const BULK_TRANSFER_MODULE =
+  "0x4d099259771bd0ec259353e06b0d2bd5f5e03141a56adb066a71ec64bd2b50c9";
 
 interface TokenMetadata {
   name: string;
@@ -87,24 +90,22 @@ function BulkTransferContent() {
     return () => clearTimeout(debounceTimer);
   }, [tokenAddress, network.name]);
 
-  const isMainnet = network.name === Network.MAINNET;
-
   const steps = useMemo(() => {
     if (!tokenMetadata || validAddresses.length === 0 || rawAmount === BigInt(0)) {
       return [];
     }
 
-    return validAddresses.map((recipient) => ({
-      title: `Transfer to ${recipient.slice(0, 8)}...${recipient.slice(-6)}`,
-      description: `Send ${formatTokenAmount(rawAmount, tokenMetadata.decimals)} ${tokenMetadata.symbol}`,
-      moduleAddress: "0x1",
-      moduleName: "primary_fungible_store",
-      functionName: "transfer",
-      typeArguments: isMainnet ? [] : ["0x1::fungible_asset::Metadata"],
-      args: isMainnet
-        ? [recipient, rawAmount.toString()]
-        : [tokenAddress, recipient, rawAmount.toString()],
-    })) as {
+    return [
+      {
+        title: `Bulk Transfer to ${validAddresses.length} recipients`,
+        description: `Send ${formatTokenAmount(rawAmount, tokenMetadata.decimals)} ${tokenMetadata.symbol} to each`,
+        moduleAddress: BULK_TRANSFER_MODULE,
+        moduleName: "bulk_transfers",
+        functionName: "simple_bulk_transfer",
+        typeArguments: [],
+        args: [tokenAddress, validAddresses, rawAmount.toString()],
+      },
+    ] as {
       title: string;
       description: string;
       moduleAddress: string;
@@ -113,7 +114,7 @@ function BulkTransferContent() {
       typeArguments: string[];
       args: EntryFunctionArgumentTypes[];
     }[];
-  }, [tokenMetadata, validAddresses, rawAmount, tokenAddress, isMainnet]);
+  }, [tokenMetadata, validAddresses, rawAmount, tokenAddress]);
 
   const totalAmount = useMemo(() => {
     if (!tokenMetadata || validAddresses.length === 0 || rawAmount === BigInt(0)) {
