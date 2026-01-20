@@ -112,6 +112,12 @@ const navigationGroups: NavGroup[] = [
         description: "Transfer tokens to multiple addresses",
       },
       {
+        label: "Custom Bulk Transfer",
+        href: "/bulk-transfer-custom",
+        icon: Send,
+        description: "Transfer different amounts to multiple addresses",
+      },
+      {
         label: "Facility Upsize",
         href: "/facility-upsize",
         icon: TrendingUp,
